@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTPL - Pruebas Vapi</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f2b4a 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .container { width: 100%; max-width: 520px; }
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .header .logo {
+    font-size: 14px;
+    font-weight: 600;
+    color: #60a5fa;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .header h1 {
+    font-size: 26px;
+    color: #f1f5f9;
+    font-weight: 700;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    background: #f8fafc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    background: #fff;
+  }
+  .form-group input::placeholder { color: #94a3b8; }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+  }
+  .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }
+  .btn-primary:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; transform: none; }
+  .btn-reset {
+    background: #f1f5f9;
+    color: #475569;
+    margin-top: 10px;
+    box-shadow: none;
+  }
+  .btn-reset:hover { background: #e2e8f0; }
+  .result {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    display: none;
+  }
+  .result.visible {
+    display: block;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result.success {
+    background: #f0fdf4;
+    border: 2px solid #22c55e;
+  }
+  .result.error {
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+  }
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .result-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .result-icon.success { background: #22c55e; }
+  .result-icon.error { background: #ef4444; }
+  .result-icon svg { width: 18px; height: 18px; }
+  .result-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .result-msg {
+    color: #475569;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .result-details {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #334155;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .result-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .result-meta span { display: flex; align-items: center; gap: 4px; }
+  .result-meta strong { color: #334155; }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">UTPL</div>
+    <h1>Pruebas Vapi</h1>
+  </div>
+  <div class="card">
+    <form id="vapiForm">
+      <div class="form-group">
+        <label>Asistente Vapi</label>
+        <select id="assistant" required>
+          <option value="">-- Seleccionar --</option>
+          <option value="cc4bbac0-0736-48f6-8175-0bfe4c4e8a76">UTPL MEL - MODALIDAD EN LINEA</option>
+          <option value="d61d17dc-6e48-4ce7-bfdb-3dc40dcd329e">UTPL POSGRADO</option>
+          <option value="638fb59f-0522-4d76-9ca4-a47609f64961">UTPL TECNOLÓGICO</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Modalidad</label>
+          <select id="modalidad" required>
+            <option value="">-- Seleccionar --</option>
+            <option value="MODALIDAD EN LINEA">MODALIDAD EN LINEA</option>
+            <option value="POSGRADO">POSGRADO</option>
+            <option value="TECNOLÓGICO">TECNOLÓGICO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre del Producto</label>
+          <input type="text" id="nombre_producto" placeholder="ej: Marketing" value="Marketing">
+        </div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Primer Nombre</label>
+          <input type="text" id="primer_nombre" placeholder="ej: María" value="María">
+        </div>
+        <div class="form-group">
+          <label>Nombre Completo del Cliente</label>
+          <input type="text" id="nombre_cliente" placeholder="ej: María Pérez López" value="María Pérez López">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="telefono" placeholder="ej: +593991234567" value="+593991234567" required>
+      </div>
+
+      <div class="section-title">Configuración Vapi</div>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="api_key" value="484afd71-2703-4852-8580-9629620dde82">
+      </div>
+      <div class="form-group">
+        <label>Phone Number ID</label>
+        <input type="text" id="phone_number_id" value="8b04b436-544e-4054-b4ac-474048ca5323">
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="btnLlamar">
+        <span class="spinner" id="spinner" style="display:none"></span>
+        <span id="btnText">Llamar</span>
+      </button>
+      <button type="button" class="btn btn-reset" id="btnReset">Limpiar</button>
+    </form>
+    <div id="result" class="result"></div>
+  </div>
+</div>
+
+<script>
+const VAPI_URL = 'https://api.vapi.ai/call';
+
+const assistantMap = {
+  'cc4bbac0-0736-48f6-8175-0bfe4c4e8a76': 'MODALIDAD EN LINEA',
+  'd61d17dc-6e48-4ce7-bfdb-3dc40dcd329e': 'POSGRADO',
+  '638fb59f-0522-4d76-9ca4-a47609f64961': 'TECNOLÓGICO'
+};
+
+const form = document.getElementById('vapiForm');
+const btnLlamar = document.getElementById('btnLlamar');
+const btnReset = document.getElementById('btnReset');
+const spinner = document.getElementById('spinner');
+const resultDiv = document.getElementById('result');
+
+function showResult(type, data) {
+  data = data || {};
+  resultDiv.style.display = 'block';
+  resultDiv.className = 'result visible ' + type;
+
+  var isSuccess = type === 'success';
+
+  var iconSvg = isSuccess
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+  var title = isSuccess ? 'Llamada enviada con exito' : 'Error al enviar la llamada';
+  var msg = data.message || data.error || 'Ocurrio un error inesperado.';
+
+  var html = '';
+  html += '<div class="result-head">';
+  html += '<div class="result-icon ' + type + '">' + iconSvg + '</div>';
+  html += '<div class="result-title">' + title + '</div>';
+  html += '</div>';
+  html += '<div class="result-msg">' + msg + '</div>';
+
+  if (data.callId) {
+    html += '<div class="result-meta"><span><strong>Call ID:</strong> ' + data.callId + '</span></div>';
+  }
+  if (data.status_vapi) {
+    html += '<div class="result-meta"><span><strong>Estado Vapi:</strong> ' + data.status_vapi + '</span></div>';
+  }
+  if (data.status) {
+    html += '<div class="result-meta"><span><strong>HTTP:</strong> ' + data.status + '</span></div>';
+  }
+  if (data.payload_enviado) {
+    html += '<div style="font-weight:700;margin:10px 0 4px;color:#1e293b;">Payload enviado:</div>';
+    html += '<div class="result-details">' + JSON.stringify(data.payload_enviado, null, 2).replace(/</g, '&lt;') + '</div>';
+  }
+  if (data.response) {
+    html += '<div style="font-weight:700;margin:10px 0 4px;color:#1e293b;">Respuesta Vapi:</div>';
+    html += '<div class="result-details">' + JSON.stringify(data.response, null, 2).replace(/</g, '&lt;') + '</div>';
+  }
+
+  resultDiv.innerHTML = html;
+}
+
+function hideResult() {
+  resultDiv.className = 'result';
+  resultDiv.style.display = 'none';
+  resultDiv.innerHTML = '';
+}
+
+function setLoading(loading) {
+  btnLlamar.disabled = loading;
+  spinner.style.display = loading ? 'inline-block' : 'none';
+  document.getElementById('btnText').textContent = loading ? 'Llamando...' : 'Llamar';
+}
+
+function normalizePhone(raw) {
+  let val = String(raw || '').replace(/\D/g, '');
+  if (val.length >= 9) {
+    if (val.startsWith('0')) val = '+593' + val.substring(1);
+    else if (!val.startsWith('+')) val = '+593' + val;
+  }
+  return val;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideResult();
+
+  const assistantId = document.getElementById('assistant').value;
+  const modalidad = document.getElementById('modalidad').value;
+  const nombre_producto = document.getElementById('nombre_producto').value.trim();
+  const primer_nombre = document.getElementById('primer_nombre').value.trim();
+  const nombre_cliente = document.getElementById('nombre_cliente').value.trim();
+  const rawTelefono = document.getElementById('telefono').value.trim();
+  const apiKey = document.getElementById('api_key').value.trim();
+  const phoneNumberId = document.getElementById('phone_number_id').value.trim();
+
+  if (!assistantId) { showResult('error', { message: 'Selecciona un asistente Vapi' }); return; }
+  if (!modalidad) { showResult('error', { message: 'Selecciona una modalidad' }); return; }
+  if (!rawTelefono) { showResult('error', { message: 'Ingresa un numero de telefono' }); return; }
+  if (!apiKey) { showResult('error', { message: 'Ingresa el API Key de Vapi' }); return; }
+  if (!phoneNumberId) { showResult('error', { message: 'Ingresa el Phone Number ID' }); return; }
+
+  const telefono = normalizePhone(rawTelefono);
+  if (telefono.length < 10) { showResult('error', { message: 'El numero de telefono no es valido: ' + rawTelefono }); return; }
+
+  const assistantName = assistantMap[assistantId] || modalidad;
+
+  const callName = ('UTPL ' + modalidad.charAt(0) + modalidad.slice(1).toLowerCase().replace(/ /g,'') + ' ' + (primer_nombre || 'Llamada')).substring(0, 40);
+
+  const payload = {
+    type: 'outboundPhoneCall',
+    name: callName,
+    assistantId: assistantId,
+    phoneNumberId: phoneNumberId,
+    customer: {
+      number: telefono,
+      name: nombre_cliente || primer_nombre
+    },
+    metadata: {
+      modalidad: modalidad,
+      nombre_producto: nombre_producto
+    },
+    assistantOverrides: {
+      variableValues: {
+        sip: '0',
+        nombre: primer_nombre,
+        nombre_cliente: nombre_cliente,
+        nombre_producto: nombre_producto,
+        modalidad: modalidad,
+        modo: 'normal',
+        MODO: 'normal'
+      }
+    }
+  };
+
+  setLoading(true);
+
+  try {
+    const response = await fetch(VAPI_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showResult('success', {
+        message: 'Llamada iniciada exitosamente para ' + (nombre_cliente || primer_nombre) + ' al ' + telefono,
+        callId: data.id || data.callId || null,
+        status_vapi: data.status || null,
+        status: response.status,
+        payload_enviado: payload,
+        response: data
+      });
+    } else {
+      const errMsg = data.message || data.error || 'Error desconocido del servidor';
+      showResult('error', {
+        message: errMsg,
+        error: errMsg,
+        status: response.status,
+        payload_enviado: payload,
+        response: data
+      });
+    }
+  } catch (err) {
+    showResult('error', {
+      message: 'No se pudo conectar con Vapi. Error: ' + err.message,
+      error: err.message,
+      payload_enviado: payload
+    });
+  } finally {
+    setLoading(false);
+  }
+});
+
+btnReset.addEventListener('click', () => {
+  form.reset();
+  hideResult();
+  document.getElementById('nombre_producto').value = 'Marketing';
+  document.getElementById('primer_nombre').value = 'Maria';
+  document.getElementById('nombre_cliente').value = 'Maria Perez Lopez';
+  document.getElementById('telefono').value = '+593991234567';
+});
+</script>
+</body>
+</html>

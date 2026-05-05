@@ -1,0 +1,747 @@
+{
+    "name": "UTPL-CierreLlamadas",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "utpl-cierre-vapi",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                -42180,
+                7680
+            ],
+            "id": "cb9110ca-280e-431b-bfe7-6cc6b975aef1",
+            "name": "Webhook Cierre VAPI UTPL",
+            "webhookId": "utpl-cierre-vapi-001"
+        },
+        {
+            "parameters": {
+                "jsCode": "return [{\n  json: {\n    cfg: {\n      db: { schema: 'public', table: 'utpl_registros', pk: 'cedula' },\n      states: { pending: 'PENDIENTE', inProgress: 'EN_PROCESO', retry: 'REINTENTAR', done: 'FINALIZADO' },\n      retryNomenclaturas: ['NC', 'VLL'],\n      policy: { TZ: 'America/Guayaquil' },\n      phoneFields: ['telefono1', 'telefono2', 'telefono3', 'telefono4', 'telefono5', 'telefono6']\n    }\n  }\n}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -41940,
+                7680
+            ],
+            "id": "ab0c66e7-18c1-44ef-b865-692d4ec9a9c2",
+            "name": "CONFIG INICIAL UTPL"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const root = item.json || {};\n  const envelope = root.body && typeof root.body === 'object' ? root.body : root;\n  const msg = envelope.message || envelope.data || root.message || root.data || {};\n\n  const findDeep = (obj, predicate) => {\n    const seen = new Set();\n    const stack = [obj];\n    while (stack.length) {\n      const cur = stack.pop();\n      if (!cur || typeof cur !== 'object') continue;\n      if (seen.has(cur)) continue;\n      seen.add(cur);\n      if (predicate(cur)) return cur;\n      for (const v of Object.values(cur)) {\n        if (v && typeof v === 'object') stack.push(v);\n      }\n    }\n    return null;\n  };\n\n  const callObj = msg.call || envelope.call || root.call ||\n    findDeep(msg, (x) => x.id && (x.startedAt || x.endedAt || x.customer || x.metadata));\n\n  const metadata = (callObj && callObj.metadata) || msg.metadata || envelope.metadata || root.metadata || {};\n\n  const startedAt = (callObj && callObj.startedAt) || msg.startedAt || envelope.startedAt || root.startedAt || null;\n  const endedAt = (callObj && callObj.endedAt) || msg.endedAt || envelope.endedAt || root.endedAt || null;\n  const endedReason = msg.endedReason || envelope.endedReason || root.endedReason || null;\n  const eventType = msg.type || envelope.type || root.type || null;\n  const callId = (callObj && callObj.id) || msg.id || envelope.id || root.id || null;\n  const customer = (callObj && callObj.customer) || msg.customer || envelope.customer || root.customer || {};\n\n  const transcript = msg.transcript || envelope.transcript || root.transcript ||\n    (msg.artifact && msg.artifact.transcript) || null;\n  const recordingUrl = msg.recordingUrl || envelope.recordingUrl || root.recordingUrl ||\n    (msg.artifact && msg.artifact.recordingUrl) || null;\n  const summary = msg.summary || envelope.summary || root.summary || null;\n\n  const durationMs = msg.durationMs || envelope.durationMs || root.durationMs || null;\n  const durationSeconds = msg.durationSeconds || envelope.durationSeconds || root.durationSeconds ||\n    (durationMs ? Math.round(durationMs / 1000) : null);\n\n  const cost = msg.cost || envelope.cost || root.cost || 0;\n\n  const artifact = msg.artifact || envelope.artifact || root.artifact || {};\n  const structuredOutputs = artifact.structuredOutputs || msg.structuredOutputs ||\n    envelope.structuredOutputs || root.structuredOutputs || {};\n\n  const transfers = artifact.transfers || msg.transfers || envelope.transfers || root.transfers || [];\n\n  item.json = {\n    cedula: metadata.cedula || null,\n    id_llamada: callId || null,\n    event_type: eventType,\n    endedReason: endedReason,\n    startedAt: startedAt,\n    endedAt: endedAt,\n    transcript: transcript,\n    recordingUrl: recordingUrl,\n    summary: summary,\n    durationMs: durationMs,\n    durationSeconds: durationSeconds,\n    cost: cost,\n    customer_number: customer.number || null,\n    customer_name: customer.name || null,\n    metadata: metadata,\n    artifact: artifact,\n    structuredOutputs: structuredOutputs,\n    transfers: transfers,\n    _raw: envelope\n  };\n  return item;\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -41700,
+                7680
+            ],
+            "id": "d28e14d2-e74d-41ab-9ac4-64378933df81",
+            "name": "NORMALIZA EVENTO CIERRE UTPL"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "evt_type",
+                            "leftValue": "={{ String($json.event_type || '').toLowerCase() }}",
+                            "rightValue": "end-of-call-report",
+                            "operator": {
+                                "type": "string",
+                                "operation": "equals"
+                            }
+                        },
+                        {
+                            "id": "evt_endedAt",
+                            "leftValue": "={{ $json.endedAt || null }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        },
+                        {
+                            "id": "evt_endedReason",
+                            "leftValue": "={{ $json.endedReason || null }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "or"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                -40860,
+                7680
+            ],
+            "id": "54e7f70a-c2ed-4004-a5b0-22f1145df2c9",
+            "name": "ES EVENTO CIERRE VALIDO"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const root = item.json || {};\n  const structuredOutputs = root.structuredOutputs || {};\n  let out = {\n    nomenclatura: null,\n    motivo: null,\n    es_familiar: null,\n    contactoalo: null,\n    contactoefectivo: null,\n    sentimiento: null,\n    resumen_llamada: root.summary || null,\n    transferido: null\n  };\n\n  const tryParse = (val) => {\n    if (!val) return val;\n    if (typeof val === 'object' && !Array.isArray(val)) return val;\n    if (typeof val === 'string' && (val.trim().startsWith('{') || val.trim().startsWith('['))) {\n      try { return JSON.parse(val); } catch (e) {}\n    }\n    return val;\n  };\n\n  const normalize = (name) => String(name || '').toLowerCase().replace(/[\\s_]+/g, '');\n\n  for (const [uuid, output] of Object.entries(structuredOutputs)) {\n    const name = normalize(output.name);\n    const result = tryParse(output.result);\n\n    if (name === 'estadogestionutpl' && typeof result === 'object') {\n      out.nomenclatura = result.id_nomenclatura || result.nomenclatura || out.nomenclatura;\n      out.motivo = result.id_motivo || result.motivo || out.motivo;\n    }\n    if (name === 'sentimientocliente') {\n      out.sentimiento = typeof result === 'string' ? result : null;\n    }\n    if (name === 'esfamiliar') {\n      out.es_familiar = typeof result === 'string' ? result : null;\n    }\n    if (name === 'contactoalo') {\n      out.contactoalo = typeof result === 'string' ? result : null;\n    }\n    if (name === 'contactoefectivo') {\n      out.contactoefectivo = typeof result === 'string' ? result : null;\n    }\n    if (name === 'resumenllamada') {\n      out.resumen_llamada = typeof result === 'string' ? result : (result?.resumen || out.resumen_llamada);\n    }\n    if (name === 'clientetransferido') {\n      out.transferido = typeof result === 'string' ? result : null;\n    }\n  }\n\n  if (!out.transferido) {\n    const transfers = root.transfers || [];\n    out.transferido = (Array.isArray(transfers) && transfers.length > 0) ? 'Si' : 'No';\n  }\n\n  for (const [k, v] of Object.entries(out)) {\n    if (v !== undefined) item.json[k] = v;\n  }\n\n  return item;\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -40560,
+                7480
+            ],
+            "id": "extract-structured-outputs",
+            "name": "EXTRAE STRUCTURED OUTPUTS"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const nom = String(item.json.nomenclatura || '').trim().toUpperCase();\n  const retryNoms = cfg.retryNomenclaturas || ['NC', 'VLL'];\n\n  if (retryNoms.includes(nom)) {\n    item.json.status_sugerido = 'REINTENTAR';\n    item.json.estado_flujo = cfg.states.retry;\n  } else {\n    item.json.status_sugerido = 'FINAL';\n    item.json.estado_flujo = cfg.states.done;\n  }\n\n  return item;\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -40320,
+                7480
+            ],
+            "id": "classify-status",
+            "name": "CLASIFICA ESTADO CIERRE"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "map-cedula",
+                            "name": "cedula",
+                            "value": "={{ $json.cedula || $json.metadata?.cedula || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-id-llamada",
+                            "name": "id_llamada",
+                            "value": "={{ $json.id_llamada || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-fecha-gestion",
+                            "name": "fecha_gestion",
+                            "value": "={{ (() => { const x = $json.endedAt; if (!x) return null; const d = new Date(x); if (isNaN(d.getTime())) return null; return d.toISOString().slice(0, 10); })() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-hora-gestion",
+                            "name": "hora_gestion",
+                            "value": "={{ (() => { const x = $json.endedAt; if (!x) return null; const d = new Date(x); if (isNaN(d.getTime())) return null; return d.toLocaleTimeString('en-GB', { timeZone: 'America/Guayaquil', hour12: false }).slice(0,8); })() }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-nomenclatura",
+                            "name": "id_nomenclatura",
+                            "value": "={{ $json.nomenclatura || $json.codigo_respuesta || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-motivo",
+                            "name": "id_motivo",
+                            "value": "={{ $json.motivo || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-sentimiento",
+                            "name": "sentimiento",
+                            "value": "={{ $json.sentimiento || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-transcripcion",
+                            "name": "transcripcion_llamada",
+                            "value": "={{ $json.transcript || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-resumen",
+                            "name": "resumen_llamada",
+                            "value": "={{ $json.resumen_llamada || $json.summary || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-audio",
+                            "name": "link_audio_vapi",
+                            "value": "={{ $json.recordingUrl || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-resultado",
+                            "name": "ultimo_resultado_llamada",
+                            "value": "={{ $json.endedReason || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-es-familiar",
+                            "name": "es_familiar",
+                            "value": "={{ $json.es_familiar || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-duracion",
+                            "name": "duracion_llamada",
+                            "value": "={{ $json.durationSeconds || null }}",
+                            "type": "number"
+                        },
+                        {
+                            "id": "map-hora-inicio",
+                            "name": "hora_inicio_llamada",
+                            "value": "={{ $json.startedAt || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-hora-fin",
+                            "name": "hora_fin_llamada",
+                            "value": "={{ $json.endedAt || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-transferido",
+                            "name": "transferido",
+                            "value": "={{ $json.transferido || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-contactoalo",
+                            "name": "contactoalo",
+                            "value": "={{ $json.contactoalo || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-contactoefectivo",
+                            "name": "contactoefectivo",
+                            "value": "={{ $json.contactoefectivo || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-numero-telefono",
+                            "name": "numero_telefono",
+                            "value": "={{ $json.customer_number || $json.numero_telefono || null }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-status-sugerido",
+                            "name": "status_sugerido",
+                            "value": "={{ $json.status_sugerido || 'FINAL' }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-estado-flujo",
+                            "name": "estado_flujo",
+                            "value": "={{ $json.estado_flujo }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "map-snapshot-estado",
+                            "name": "snapshot_estado_flujo",
+                            "value": "={{ $json.estado_flujo }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "includeOtherFields": true,
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                -40100,
+                7480
+            ],
+            "id": "map-fields-cierre",
+            "name": "MAPEA CAMPOS CIERRE UTPL"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const raw = String(item.json.cedula ?? '').trim();\n  if (!raw) {\n    item.json.query = `SELECT 'skip_no_cedula' AS status`;\n    return item;\n  }\n\n  const cedula = raw.replace(/'/g, '''');\n  const estado = String(item.json.estado_flujo || cfg.states.done).replace(/'/g, '''');\n\n  item.json.query = `\n    UPDATE ${cfg.db.schema}.${cfg.db.table}\n    SET estado_flujo = '${estado}',\n        updated_at = now()\n    WHERE cedula = '${cedula}'\n    RETURNING *;\n  `;\n\n  return item;\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -39740,
+                7480
+            ],
+            "id": "gen-query-cierre-utpl",
+            "name": "GENERAR QUERY ACTUALIZA"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "={{ $json.query }}"
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -39460,
+                7480
+            ],
+            "id": "update-registro-utpl",
+            "name": "ACTUALIZA REGISTRO UTPL",
+            "credentials": {
+                "postgres": {
+                    "id": "Iz7EEp0WgJu3LXhn",
+                    "name": "Gea_postgress"
+                }
+            },
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {
+                "operation": "upsert",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "utpl_llamadas"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "id_llamada": "={{ $json.id_llamada || null }}",
+                        "cedula": "={{ String($json.cedula || '') }}",
+                        "fecha_gestion": "={{ $json.fecha_gestion || null }}",
+                        "hora_gestion": "={{ $json.hora_gestion || null }}",
+                        "id_nomenclatura": "={{ $json.id_nomenclatura || null }}",
+                        "id_motivo": "={{ $json.id_motivo || null }}",
+                        "sentimiento": "={{ $json.sentimiento || null }}",
+                        "transcripcion_llamada": "={{ $json.transcripcion_llamada || null }}",
+                        "resumen_llamada": "={{ $json.resumen_llamada || null }}",
+                        "link_audio_vapi": "={{ $json.link_audio_vapi || null }}",
+                        "ultimo_resultado_llamada": "={{ $json.ultimo_resultado_llamada || null }}",
+                        "es_familiar": "={{ $json.es_familiar || null }}",
+                        "duracion_llamada": "={{ $json.duracion_llamada || null }}",
+                        "hora_inicio_llamada": "={{ $json.hora_inicio_llamada || null }}",
+                        "hora_fin_llamada": "={{ $json.hora_fin_llamada || null }}",
+                        "transferido": "={{ $json.transferido || null }}",
+                        "contactoalo": "={{ $json.contactoalo || null }}",
+                        "contactoefectivo": "={{ $json.contactoefectivo || null }}",
+                        "numero_telefono": "={{ $json.numero_telefono || null }}"
+                    },
+                    "matchingColumns": [
+                        "id_llamada"
+                    ],
+                    "schema": [
+                        {
+                            "id": "id",
+                            "displayName": "id",
+                            "required": false,
+                            "defaultMatch": true,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": true,
+                            "removed": true
+                        },
+                        {
+                            "id": "id_llamada",
+                            "displayName": "id_llamada",
+                            "required": true,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "cedula",
+                            "displayName": "cedula",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "fecha_gestion",
+                            "displayName": "fecha_gestion",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "hora_gestion",
+                            "displayName": "hora_gestion",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "id_nomenclatura",
+                            "displayName": "id_nomenclatura",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "id_motivo",
+                            "displayName": "id_motivo",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "sentimiento",
+                            "displayName": "sentimiento",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "transcripcion_llamada",
+                            "displayName": "transcripcion_llamada",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "resumen_llamada",
+                            "displayName": "resumen_llamada",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "link_audio_vapi",
+                            "displayName": "link_audio_vapi",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "ultimo_resultado_llamada",
+                            "displayName": "ultimo_resultado_llamada",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "es_familiar",
+                            "displayName": "es_familiar",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "duracion_llamada",
+                            "displayName": "duracion_llamada",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "number",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "hora_inicio_llamada",
+                            "displayName": "hora_inicio_llamada",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "hora_fin_llamada",
+                            "displayName": "hora_fin_llamada",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "transferido",
+                            "displayName": "transferido",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "contactoalo",
+                            "displayName": "contactoalo",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "contactoefectivo",
+                            "displayName": "contactoefectivo",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "numero_telefono",
+                            "displayName": "numero_telefono",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": false
+                        },
+                        {
+                            "id": "created_at",
+                            "displayName": "created_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": false,
+                            "removed": false
+                        },
+                        {
+                            "id": "updated_at",
+                            "displayName": "updated_at",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "dateTime",
+                            "canBeUsedToMatch": false,
+                            "removed": false
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -39200,
+                7480
+            ],
+            "id": "insert-llamadas-utpl",
+            "name": "INSERTA EN LLAMADAS UTPL",
+            "retryOnFail": true,
+            "maxTries": 3,
+            "credentials": {
+                "postgres": {
+                    "id": "Iz7EEp0WgJu3LXhn",
+                    "name": "Gea_postgress"
+                }
+            },
+            "onError": "continueErrorOutput"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "={{ (() => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const raw = String($json.cedula ?? '').trim();\n  if (!raw) return `SELECT 'skip_fallback_sin_cedula' AS status`;\n\n  const cedula = raw.replace(/'/g, \"''\");\n  const snapEstado = String($json.snapshot_estado_flujo ?? cfg.states.pending ?? 'PENDIENTE').replace(/'/g, \"''\");\n\n  return `\n    UPDATE ${cfg.db.schema}.${cfg.db.table}\n    SET estado_flujo = '${snapEstado}',\n        updated_at = now()\n    WHERE cedula = '${cedula}'\n    RETURNING *;\n  `;\n})() }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                -39740,
+                8000
+            ],
+            "id": "fallback-cierre-utpl",
+            "name": "FALLBACK RESTORE CIERRE",
+            "credentials": {
+                "postgres": {
+                    "id": "Iz7EEp0WgJu3LXhn",
+                    "name": "Gea_postgress"
+                }
+            },
+            "onError": "continueRegularOutput"
+        },
+        {
+            "parameters": {},
+            "id": "ignore-event-utpl",
+            "name": "IGNORAR EVENTO",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                -39460,
+                8140
+            ]
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Webhook Cierre VAPI UTPL": {
+            "main": [
+                [
+                    {
+                        "node": "CONFIG INICIAL UTPL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "CONFIG INICIAL UTPL": {
+            "main": [
+                [
+                    {
+                        "node": "NORMALIZA EVENTO CIERRE UTPL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "NORMALIZA EVENTO CIERRE UTPL": {
+            "main": [
+                [
+                    {
+                        "node": "ES EVENTO CIERRE VALIDO",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ES EVENTO CIERRE VALIDO": {
+            "main": [
+                [
+                    {
+                        "node": "EXTRAE STRUCTURED OUTPUTS",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "IGNORAR EVENTO",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "EXTRAE STRUCTURED OUTPUTS": {
+            "main": [
+                [
+                    {
+                        "node": "CLASIFICA ESTADO CIERRE",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "CLASIFICA ESTADO CIERRE": {
+            "main": [
+                [
+                    {
+                        "node": "MAPEA CAMPOS CIERRE UTPL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "MAPEA CAMPOS CIERRE UTPL": {
+            "main": [
+                [
+                    {
+                        "node": "GENERAR QUERY ACTUALIZA",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "FALLBACK RESTORE CIERRE",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "GENERAR QUERY ACTUALIZA": {
+            "main": [
+                [
+                    {
+                        "node": "ACTUALIZA REGISTRO UTPL",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "INSERTA EN LLAMADAS UTPL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ACTUALIZA REGISTRO UTPL": {
+            "main": []
+        },
+        "INSERTA EN LLAMADAS UTPL": {
+            "main": [
+                [
+                    {
+                        "node": "IGNORAR EVENTO",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "FALLBACK RESTORE CIERRE",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "utpl-cierre-v1-001",
+    "meta": {
+        "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
+    },
+    "id": "UTPL-CIERRE-LLAMADAS-001",
+    "tags": []
+}
