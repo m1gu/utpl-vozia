@@ -1,0 +1,328 @@
+{
+  "name": "UTPL_INGRESO_LEAD",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "utpl-ingreso-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-800, 400],
+      "id": "wh-ingreso-lead-utpl",
+      "name": "Webhook Ingreso Lead",
+      "webhookId": "utpl-ingreso-lead-wh"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "auth-check",
+              "leftValue": "={{ $json.headers['x-api-auth'] }}",
+              "rightValue": "utpl-93d6061217323b4ee8c999d670bb506437ffd3d3aa1d3510",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-560, 400],
+      "id": "if-auth-check",
+      "name": "VALIDA API AUTH"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    status: 401,\n    body: { status: 'error', message: 'Unauthorized: token x-api-auth invalido' }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-320, 600],
+      "id": "code-401-response",
+      "name": "RESPUESTA 401"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "responseCode": 401,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [-80, 600],
+      "id": "respond-401",
+      "name": "RESPONDE 401"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const raw = item.json.body || item.json || {};\n\n  // Separar nombres_completos_persona en nombre y apellido\n  const fullName = String(raw.nombres_completos_persona || '').trim();\n  const words = fullName.split(/\\s+/).filter(w => w.length > 0);\n  let nombre = '';\n  let apellido = '';\n\n  if (words.length === 0) {\n    nombre = '';\n    apellido = '';\n  } else if (words.length === 1) {\n    nombre = words[0];\n    apellido = '';\n  } else {\n    const splitPoint = Math.max(1, Math.floor(words.length / 2));\n    nombre = words.slice(0, splitPoint).join(' ');\n    apellido = words.slice(splitPoint).join(' ');\n  }\n\n  // Normalizar modalidad\n  const modalidadRaw = String(raw.audiencia_negocio || '').trim().toUpperCase();\n  const modalidadMap = {\n    'EN LINEA': 'MODALIDAD EN LINEA',\n    'LINEA': 'MODALIDAD EN LINEA',\n    'MEL': 'MODALIDAD EN LINEA',\n    'MODALIDAD EN LINEA': 'MODALIDAD EN LINEA',\n    'POSGRADO': 'POSGRADO',\n    'MAESTRIA': 'POSGRADO',\n    'TECNOLOGICO': 'TECNOLOGICO',\n    'TECNOLOGIA': 'TECNOLOGICO'\n  };\n  const modalidad = modalidadMap[modalidadRaw] || modalidadRaw;\n\n  return {\n    json: {\n      id_negocio: String(raw.id_negocio || '').trim(),\n      cedula: String(raw.id_persona || '').trim(),\n      nombre: nombre,\n      apellido: apellido,\n      modalidad: modalidad,\n      producto: String(raw.nombre_producto_interes || '').trim(),\n      telefono1: String(raw.celular_persona || '').trim(),\n      estado_flujo: 'PENDIENTE'\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-320, 300],
+      "id": "code-normalize-lead",
+      "name": "NORMALIZA Y MAPEA LEAD"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "utpl_registros"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_negocio": "={{ String($json.id_negocio || '') }}",
+            "cedula": "={{ String($json.cedula || '') }}",
+            "nombre": "={{ $json.nombre }}",
+            "apellido": "={{ $json.apellido }}",
+            "modalidad": "={{ $json.modalidad }}",
+            "producto": "={{ $json.producto }}",
+            "telefono1": "={{ $json.telefono1 }}"
+          },
+          "matchingColumns": ["id_negocio"],
+          "schema": [
+            {
+              "id": "id_negocio",
+              "displayName": "id_negocio",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cedula",
+              "displayName": "cedula",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "apellido",
+              "displayName": "apellido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "modalidad",
+              "displayName": "modalidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "producto",
+              "displayName": "producto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "telefono1",
+              "displayName": "telefono1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-80, 300],
+      "id": "pg-upsert-lead",
+      "name": "GUARDA LEAD EN UTPL REGISTROS",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "Iz7EEp0WgJu3LXhn",
+          "name": "Gea_postgress"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    status: 200,\n    body: {\n      status: 'success',\n      message: 'Lead saved in Supabase',\n      id_negocio: item.json.id_negocio || null,\n      cedula: item.json.cedula || null\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [160, 300],
+      "id": "code-success-response",
+      "name": "RESPUESTA 200 OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [400, 300],
+      "id": "respond-200",
+      "name": "RESPONDE 200 OK"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const errMsg = item.json?.message || item.json?.error || JSON.stringify(item.json);\n  return {\n    json: {\n      alert_type: 'error',\n      service: 'UTPL_INGRESO_LEAD',\n      error: 'Fallo al insertar lead en Supabase',\n      details: errMsg,\n      timestamp: new Date().toISOString(),\n      payload: item.json\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [160, 500],
+      "id": "code-error-alert",
+      "name": "FORMATEA ALERTA ERROR"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Ingreso Lead": {
+      "main": [
+        [
+          {
+            "node": "VALIDA API AUTH",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VALIDA API AUTH": {
+      "main": [
+        [
+          {
+            "node": "NORMALIZA Y MAPEA LEAD",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESPUESTA 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESPUESTA 401": {
+      "main": [
+        [
+          {
+            "node": "RESPONDE 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NORMALIZA Y MAPEA LEAD": {
+      "main": [
+        [
+          {
+            "node": "GUARDA LEAD EN UTPL REGISTROS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GUARDA LEAD EN UTPL REGISTROS": {
+      "main": [
+        [
+          {
+            "node": "RESPUESTA 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORMATEA ALERTA ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESPUESTA 200 OK": {
+      "main": [
+        [
+          {
+            "node": "RESPONDE 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "utpl-ingreso-lead-v1",
+  "meta": {
+    "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
+  },
+  "id": "UTPL-INGRESO-LEAD-001",
+  "tags": []
+}

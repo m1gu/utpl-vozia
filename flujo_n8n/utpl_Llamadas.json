@@ -1,38 +1,32 @@
 {
-  "name": "UTPL-Llamadas",
+  "name": "Utpl-Llamadas",
   "nodes": [
     {
       "parameters": {
-        "jsCode": "return [{\n  json: {\n    cfg: {\n      runtime: { testMode: true, timeOffsetMinutes: 0 },\n      db: { schema: 'public', table: 'utpl_registros', pk: 'cedula' },\n      states: { pending: 'PENDIENTE', inProgress: 'EN_PROCESO', retry: 'REINTENTAR', done: 'FINALIZADO' },\n      agents: {\n        'MODALIDAD EN LINEA': '00000000-0000-0000-0000-000000000001',\n        'POSGRADO': '00000000-0000-0000-0000-000000000002',\n        'TECNOLÓGICO': '00000000-0000-0000-0000-000000000003'\n      },\n      vapi: {\n        baseUrl: 'https://api.vapi.ai',\n        apiKey: 'TU_API_KEY',\n        phoneNumberId: 'TU_PHONE_ID',\n        sip: '0',\n        campaignId: 'UTPL_LLAMADAS'\n      },\n      policy: {\n        TZ: 'America/Guayaquil',\n        CC: '+593',\n        maxLifetimeTries: 16,\n        maxWindowTries: 3,\n        offHoursWait: 30,\n        holidays: ['2026-05-25'],\n        windows: [\n          { id: 'MAÑANA', days: '1,2,3,4,5', start: '08:00', end: '12:00' },\n          { id: 'TARDE', days: '1,2,3,4,5', start: '12:01', end: '14:00' },\n          { id: 'NOCHE', days: '1,2,3,4,5', start: '14:01', end: '20:00' }\n        ],\n        phoneFields: ['telefono1', 'telefono2', 'telefono3', 'telefono4', 'telefono5', 'telefono6']\n      },\n      noPhoneClassification: {\n        nomenclatura: 'NC',\n        codigo_respuesta: 'NO_CONTACTO',\n        motivo: 'Sin numero de telefono valido'\n      }\n    }\n  }\n}];"
+        "jsCode": "return [{\n  json: {\n    cfg: {\n      runtime: { testMode: false, timeOffsetMinutes: 0 },\n      db: { schema: 'public', table: 'utpl_registros', pk: 'id_negocio' },\n      states: { pending: 'PENDIENTE', inProgress: 'EN_PROCESO', retry: 'REINTENTAR', done: 'FINALIZADO' },\n      agents: {\n        'MODALIDAD EN LINEA': 'cc4bbac0-0736-48f6-8175-0bfe4c4e8a76',\n        'POSGRADO': 'd61d17dc-6e48-4ce7-bfdb-3dc40dcd329e',\n        'TECNOLÓGICO': '638fb59f-0522-4d76-9ca4-a47609f64961'\n      },\n      vapi: {\n        baseUrl: 'https://api.vapi.ai',\n        apiKey: '484afd71-2703-4852-8580-9629620dde82',\n        phoneNumberId: '8b04b436-544e-4054-b4ac-474048ca5323',\n        sip: '0',\n        campaignId: 'UTPL_LLAMADAS'\n      },\n      policy: {\n        TZ: 'America/Guayaquil',\n        CC: '+593',\n        maxLifetimeTries: 16,\n        maxWindowTries: 3,\n        offHoursWait: 30,\n        holidays: ['2026-05-25'],\n        windows: [\n          { id: 'MAÑANA', days: '1,2,3,4,5', start: '08:00', end: '12:00' },\n          { id: 'TARDE', days: '1,2,3,4,5', start: '12:01', end: '14:00' },\n          { id: 'NOCHE', days: '1,2,3,4,5', start: '14:01', end: '20:00' }\n        ],\n        phoneFields: ['telefono1', 'telefono2', 'telefono3', 'telefono4', 'telefono5', 'telefono6']\n      },\n      noPhoneClassification: {\n        nomenclatura: 'NC',\n        codigo_respuesta: 'NO_CONTACTO',\n        motivo: 'Sin numero de telefono valido'\n      }\n    }\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-3160, 500],
-      "id": "035ca24e-04e7-4937-8ace-b830d16376cd",
+      "position": [
+        -2540,
+        200
+      ],
+      "id": "152713bf-f1d2-4935-8e5b-2c1c49896e7f",
       "name": "CONFIG INICIAL UTPL"
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [{ "field": "seconds", "secondsInterval": 60 }]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [-3380, 500],
-      "id": "63613f31-dfdc-42b5-8d3b-5ee91c2488dd",
-      "name": "EJECUTA ESTO CADA 60 SEG"
-    },
-    {
-      "parameters": {
         "operation": "executeQuery",
-        "query": "={{ (() => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const offset = cfg.runtime.timeOffsetMinutes || 0;\n  const nowOffset = `now() + interval '${offset} minutes'`;\n  return `\n    WITH next_call AS (\n      SELECT c.cedula, timezone('${cfg.policy.TZ}', ${nowOffset}) as now_local\n      FROM ${cfg.db.schema}.${cfg.db.table} c\n      WHERE c.estado_flujo IN ('${cfg.states.pending}', '${cfg.states.retry}')\n        AND (c.fecha_reagenda IS NULL OR c.fecha_reagenda <= ${nowOffset})\n      ORDER BY c.intentos_llamada ASC, c.fecha_reagenda ASC NULLS FIRST\n      LIMIT 1\n      FOR UPDATE SKIP LOCKED\n    )\n    UPDATE ${cfg.db.schema}.${cfg.db.table} c\n    SET estado_flujo = '${cfg.states.inProgress}',\n        updated_at = ${nowOffset}\n    FROM next_call nc\n    WHERE c.cedula = nc.cedula\n    RETURNING c.*;\n  `;\n})() }}",
+        "query": "={{ (() => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const offset = cfg.runtime.timeOffsetMinutes || 0;\n  const nowOffset = `now() + interval '${offset} minutes'`;\n  return `\n    WITH next_call AS (\n      SELECT c.cedula, timezone('${cfg.policy.TZ}', ${nowOffset}) as now_local\n      FROM ${cfg.db.schema}.${cfg.db.table} c\n      WHERE c.estado_flujo IN ('${cfg.states.pending}', '${cfg.states.retry}')\n        AND (c.fecha_reagenda IS NULL OR c.fecha_reagenda <= ${nowOffset})\n      ORDER BY c.intentos_llamada ASC, c.fecha_reagenda ASC NULLS FIRST\n      LIMIT 1\n      FOR UPDATE SKIP LOCKED\n    )\n    UPDATE ${cfg.db.schema}.${cfg.db.table} c\n    SET estado_flujo = '${cfg.states.inProgress}',\n        updated_at = ${nowOffset}\n    FROM next_call nc\n    WHERE c.id_negocio = nc.id_negocio\n    RETURNING c.*;\n  `;\n})() }}",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-2940, 500],
-      "id": "dd6b3a67-53e6-46cb-99fa-988d2beed8c9",
+      "position": [
+        -2320,
+        200
+      ],
+      "id": "72883a8f-b0ef-429e-a387-0c73199a547e",
       "name": "BUSCA Y BLOQUEA REGISTRO",
       "alwaysOutputData": false,
       "retryOnFail": true,
@@ -58,7 +52,7 @@
           "conditions": [
             {
               "id": "399d66fc-66e0-450c-ae4b-553e88da1105",
-              "leftValue": "={{ $json.cedula }}",
+              "leftValue": "={{ $json.id_negocio || $json.cedula }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -73,26 +67,35 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-2720, 500],
-      "id": "939967b0-d897-4d6f-967d-542aeff92ece",
+      "position": [
+        -2100,
+        200
+      ],
+      "id": "e861f0db-386b-481b-a6fd-3a8fc21a64ee",
       "name": "SI SE ENCONTRO REGISTRO"
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [-2240, 720],
-      "id": "0c280737-4db9-4c2a-84a5-699361afca43",
+      "position": [
+        -1660,
+        360
+      ],
+      "id": "e9430ecc-b246-4afd-b00e-c73d5df61368",
       "name": "NO HACE NADA"
     },
     {
       "parameters": {
-        "jsCode": "return items.map(item => {\n  const lead = item.json;\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n\n  lead.cedula = String(lead.cedula ?? '').trim();\n  lead.nombre_completo = `${lead.nombre ?? ''} ${lead.apellido ?? ''}`.trim();\n  lead.intentos_llamada = Number(lead.intentos_llamada || 0);\n  lead.win_tries = Number(lead.win_tries || 0);\n  lead.telefono_index = Number(lead.telefono_index ?? 0);\n  lead.modalidad = String(lead.modalidad ?? '').trim().toUpperCase();\n  lead.producto = String(lead.producto ?? '').trim();\n\n  return item;\n});"
+        "jsCode": "return items.map(item => {\n  const lead = item.json;\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n\n  lead.cedula = String(lead.cedula ?? '').trim();\n  lead.nombre_completo = `${lead.nombre ?? ''} ${lead.apellido ?? ''}`.trim();\n  lead.intentos_llamada = Number(lead.intentos_llamada || 0);\n  lead.win_tries = Number(lead.win_tries || 0);\n  lead.telefono_index = Number(lead.telefono_index ?? 0);\n  lead.id_negocio = String(lead.id_negocio ?? '').trim();\n  lead.modalidad = String(lead.modalidad ?? '').trim().toUpperCase();\n  lead.producto = String(lead.producto ?? '').trim();\n\n  return item;\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2480, 420],
-      "id": "9fa20595-8eea-48b2-97f9-9c70a54669be",
+      "position": [
+        -1860,
+        120
+      ],
+      "id": "66dbb392-dad6-461d-b2e3-dc2a44592e2c",
       "name": "NORMALIZA DATOS"
     },
     {
@@ -101,8 +104,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2260, 300],
-      "id": "e7bbfb88-7ac2-46d6-af4f-58d423692e8c",
+      "position": [
+        -1640,
+        0
+      ],
+      "id": "e4db66f5-2822-4938-afc0-a7f3dc3e4653",
       "name": "POLITICAS REGLA 3x3"
     },
     {
@@ -132,8 +138,11 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-2040, 240],
-      "id": "181ee58f-dcf3-4bfe-b03c-b0c9db6a9538",
+      "position": [
+        -1420,
+        -60
+      ],
+      "id": "5fc125c8-a077-48a8-94fb-e5004ee23246",
       "name": "SI PUEDE LLAMAR"
     },
     {
@@ -142,8 +151,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1800, 220],
-      "id": "e81f7d14-d96f-421c-8a76-5fe0db1085e5",
+      "position": [
+        -1180,
+        -80
+      ],
+      "id": "93cf1dae-8f58-4c1f-aa3a-b5a39f17670c",
       "name": "PROCESA TELEFONOS"
     },
     {
@@ -169,8 +181,11 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-1820, 560],
-      "id": "98632521-86a1-4684-b18f-47e11b571fa6",
+      "position": [
+        -1200,
+        260
+      ],
+      "id": "8a06990f-e5d1-49b4-99b2-e470cc82a952",
       "name": "FORMATEA STATUS"
     },
     {
@@ -199,7 +214,9 @@
             "telefono_index": "={{ $json.telefono_index ?? null }}",
             "updated_at": "={{ $now }}"
           },
-          "matchingColumns": ["cedula"],
+          "matchingColumns": [
+            "id_negocio"
+          ],
           "schema": [
             {
               "id": "cedula",
@@ -280,8 +297,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-1580, 560],
-      "id": "67bf9a75-cb61-4559-aa05-02239f9d5578",
+      "position": [
+        -960,
+        260
+      ],
+      "id": "84117568-e02c-4a69-8f22-bd471657b7f8",
       "name": "GUARDA STATUS",
       "credentials": {
         "postgres": {
@@ -317,8 +337,11 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-1520, 260],
-      "id": "6540af7d-54b6-4baf-8fdd-cfd2c874ad0f",
+      "position": [
+        -900,
+        -40
+      ],
+      "id": "0e73c38c-887b-49b4-aaca-f83c5cfd7318",
       "name": "SI QUEDAN NUMEROS"
     },
     {
@@ -327,8 +350,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1280, 160],
-      "id": "c0010001-0001-4000-a000-000000000001",
+      "position": [
+        -660,
+        -140
+      ],
+      "id": "75ebb623-36d9-4f9c-a5ef-9e80c3ff921c",
       "name": "CAPTURA SNAPSHOT"
     },
     {
@@ -337,8 +363,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1280, 400],
-      "id": "6ae375ef-006c-4bc6-9981-1ba6bbe30b01",
+      "position": [
+        -660,
+        100
+      ],
+      "id": "b5a42d93-0679-466c-b901-b5e6c4a0a08f",
       "name": "SIN NUMERO VALIDO"
     },
     {
@@ -367,7 +396,9 @@
             "fecha_ultima_llamada": "={{ $now }}",
             "updated_at": "={{ $now }}"
           },
-          "matchingColumns": ["cedula"],
+          "matchingColumns": [
+            "id_negocio"
+          ],
           "schema": [
             {
               "id": "cedula",
@@ -475,8 +506,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-1020, 80],
-      "id": "8390c398-c1fa-40c1-931b-2aac9a4fc50a",
+      "position": [
+        -420,
+        -240
+      ],
+      "id": "c5fbcdcc-6a30-4bc6-b5e0-470278712439",
       "name": "GUARDA PRE-LLAMADA",
       "retryOnFail": true,
       "maxTries": 3,
@@ -514,7 +548,9 @@
             "telefono_index": "={{ Number($json.telefono_index || 0) }}",
             "updated_at": "={{ $now }}"
           },
-          "matchingColumns": ["cedula"],
+          "matchingColumns": [
+            "id_negocio"
+          ],
           "schema": [
             {
               "id": "cedula",
@@ -612,8 +648,11 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-1280, 600],
-      "id": "e4bfab80-1440-46fd-8a83-ee580557d06b",
+      "position": [
+        -620,
+        360
+      ],
+      "id": "375975f3-4de4-4571-bcc4-9f6454a3f0ff",
       "name": "GUARDA REPORTE",
       "credentials": {
         "postgres": {
@@ -637,13 +676,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"type\": \"outboundPhoneCall\",\n  \"name\": \"Llamada {{ $json.modalidad || 'UTPL' }} - {{ $json.cedula }}\",\n  \"assistantId\": \"{{ $json.assistant_id || $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.agents['MODALIDAD EN LINEA'] }}\",\n  \"phoneNumberId\": \"{{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.vapi.phoneNumberId }}\",\n  \"customer\": {\n    \"number\": \"{{ $json.telefono_actual }}\",\n    \"name\": \"{{ $json.nombre_completo }}\"\n  },\n  \"metadata\": {\n    \"cedula\": \"{{ $json.cedula }}\",\n    \"modalidad\": \"{{ $json.modalidad }}\",\n    \"producto\": \"{{ $json.producto }}\"\n  },\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"sip\": \"{{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.vapi.sip }}\",\n      \"cedula\": \"{{ $json.cedula }}\",\n      \"nombre\": \"{{ $json.nombre }}\",\n      \"nombre_cliente\": \"{{ $json.nombre_completo }}\",\n      \"producto\": \"{{ $json.producto }}\",\n      \"modalidad\": \"{{ $json.modalidad }}\",\n      \"modo\": \"{{ $json.modo_operativo || 'normal' }}\",\n      \"MODO\": \"{{ $json.modo_operativo || 'normal' }}\"\n    }\n  }\n}",
+        "jsonBody": "={\n  \"type\": \"outboundPhoneCall\",\n  \"name\": \"Llamada {{ $json.modalidad || 'UTPL' }} - {{ $json.cedula }}\",\n  \"assistantId\": \"{{ $json.assistant_id || $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.agents['MODALIDAD EN LINEA'] }}\",\n  \"phoneNumberId\": \"{{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.vapi.phoneNumberId }}\",\n  \"customer\": {\n    \"number\": \"{{ $json.telefono_actual }}\",\n    \"name\": \"{{ $json.nombre_completo }}\"\n  },\n  \"metadata\": {\n    \"id_negocio\": \"{{ $json.id_negocio }}\",\n    \"cedula\": \"{{ $json.cedula }}\",\n    \"modalidad\": \"{{ $json.modalidad }}\",\n    \"producto\": \"{{ $json.producto }}\"\n  },\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"sip\": \"{{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.vapi.sip }}\",\n      \"cedula\": \"{{ $json.cedula }}\",\n      \"nombre\": \"{{ $json.nombre }}\",\n      \"nombre_cliente\": \"{{ $json.nombre_completo }}\",\n      \"producto\": \"{{ $json.producto }}\",\n      \"modalidad\": \"{{ $json.modalidad }}\",\n      \"modo\": \"{{ $json.modo_operativo || 'normal' }}\",\n      \"MODO\": \"{{ $json.modo_operativo || 'normal' }}\"\n    }\n  }\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-740, 80],
-      "id": "7504d111-a443-4ae9-9021-9a87fcdae5ae",
+      "position": [
+        -140,
+        -220
+      ],
+      "id": "a2177246-1534-484c-b66c-de94c88a1332",
       "name": "LLAMAR VAPI AGENTE",
       "retryOnFail": true,
       "alwaysOutputData": false,
@@ -654,13 +696,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "={{ (() => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const raw = String($json.cedula ?? $items('BUSCA Y BLOQUEA REGISTRO', 0, 0)[0].json.cedula ?? '').trim();\n  if (!raw) return `SELECT 'skip_fallback_sin_cedula' AS status`;\n\n  const cedula = raw.replace(/'/g, \"''\");\n\n  const hasSnapshot = [\n    $json.snapshot_estado_flujo,\n    $json.snapshot_fecha_reagenda,\n    $json.snapshot_intentos_llamada,\n    $json.snapshot_win_tries,\n    $json.snapshot_telefono_index,\n    $json.snapshot_win_stamp,\n    $json.snapshot_fecha_ultima_llamada\n  ].some(v => v !== undefined);\n\n  if (hasSnapshot) {\n    const snapEstado = String($json.snapshot_estado_flujo ?? cfg.states.pending ?? 'PENDIENTE').replace(/'/g, \"''\");\n\n    const snapFechaReagendaRaw = $json.snapshot_fecha_reagenda;\n    const snapFechaReagendaSql = (snapFechaReagendaRaw == null || String(snapFechaReagendaRaw).trim() === '')\n      ? 'NULL'\n      : ` '${String(snapFechaReagendaRaw).replace(/'/g, \"''\")}'::timestamptz `;\n\n    const snapFechaUltRaw = $json.snapshot_fecha_ultima_llamada;\n    const snapFechaUltSql = (snapFechaUltRaw == null || String(snapFechaUltRaw).trim() === '')\n      ? 'NULL'\n      : ` '${String(snapFechaUltRaw).replace(/'/g, \"''\")}'::timestamptz `;\n\n    const snapIntentosNum = Number($json.snapshot_intentos_llamada);\n    const snapIntentosSql = isNaN(snapIntentosNum) ? 'NULL' : String(snapIntentosNum);\n\n    const snapWinTriesNum = Number($json.snapshot_win_tries);\n    const snapWinTriesSql = isNaN(snapWinTriesNum) ? 'NULL' : String(snapWinTriesNum);\n\n    const snapTelIndexNum = Number($json.snapshot_telefono_index);\n    const snapTelIndexSql = isNaN(snapTelIndexNum) ? 'NULL' : String(snapTelIndexNum);\n\n    const snapWinStampRaw = $json.snapshot_win_stamp;\n    const snapWinStampSql = (snapWinStampRaw == null || String(snapWinStampRaw).trim() === '')\n      ? 'NULL'\n      : ` '${String(snapWinStampRaw).replace(/'/g, \"''\")}' `;\n\n    return `\n      UPDATE ${cfg.db.schema}.${cfg.db.table}\n      SET estado_flujo = '${snapEstado}',\n          fecha_reagenda = ${snapFechaReagendaSql},\n          intentos_llamada = ${snapIntentosSql},\n          win_tries = ${snapWinTriesSql},\n          telefono_index = ${snapTelIndexSql},\n          win_stamp = ${snapWinStampSql},\n          fecha_ultima_llamada = ${snapFechaUltSql},\n          updated_at = now()\n      WHERE cedula = '${cedula}'\n      RETURNING *;\n    `;\n  }\n\n  return `\n    UPDATE ${cfg.db.schema}.${cfg.db.table}\n    SET estado_flujo = '${cfg.states.pending}',\n        fecha_reagenda = NULL,\n        intentos_llamada = 0,\n        win_tries = 0,\n        telefono_index = 0,\n        win_stamp = NULL,\n        fecha_ultima_llamada = NULL,\n        updated_at = now()\n    WHERE cedula = '${cedula}'\n    RETURNING *;\n  `;\n})() }}",
+        "query": "={{ (() => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const raw = String($json.cedula ?? $items('BUSCA Y BLOQUEA REGISTRO', 0, 0)[0].json.cedula ?? '').trim();\n  if (!raw) return `SELECT 'skip_fallback_sin_cedula' AS status`;\n\n  const cedula = raw.replace(/'/g, \"''\");\n\n  const hasSnapshot = [\n    $json.snapshot_estado_flujo,\n    $json.snapshot_fecha_reagenda,\n    $json.snapshot_intentos_llamada,\n    $json.snapshot_win_tries,\n    $json.snapshot_telefono_index,\n    $json.snapshot_win_stamp,\n    $json.snapshot_fecha_ultima_llamada\n  ].some(v => v !== undefined);\n\n  if (hasSnapshot) {\n    const snapEstado = String($json.snapshot_estado_flujo ?? cfg.states.pending ?? 'PENDIENTE').replace(/'/g, \"''\");\n\n    const snapFechaReagendaRaw = $json.snapshot_fecha_reagenda;\n    const snapFechaReagendaSql = (snapFechaReagendaRaw == null || String(snapFechaReagendaRaw).trim() === '')\n      ? 'NULL'\n      : ` '${String(snapFechaReagendaRaw).replace(/'/g, \"''\")}'::timestamptz `;\n\n    const snapFechaUltRaw = $json.snapshot_fecha_ultima_llamada;\n    const snapFechaUltSql = (snapFechaUltRaw == null || String(snapFechaUltRaw).trim() === '')\n      ? 'NULL'\n      : ` '${String(snapFechaUltRaw).replace(/'/g, \"''\")}'::timestamptz `;\n\n    const snapIntentosNum = Number($json.snapshot_intentos_llamada);\n    const snapIntentosSql = isNaN(snapIntentosNum) ? 'NULL' : String(snapIntentosNum);\n\n    const snapWinTriesNum = Number($json.snapshot_win_tries);\n    const snapWinTriesSql = isNaN(snapWinTriesNum) ? 'NULL' : String(snapWinTriesNum);\n\n    const snapTelIndexNum = Number($json.snapshot_telefono_index);\n    const snapTelIndexSql = isNaN(snapTelIndexNum) ? 'NULL' : String(snapTelIndexNum);\n\n    const snapWinStampRaw = $json.snapshot_win_stamp;\n    const snapWinStampSql = (snapWinStampRaw == null || String(snapWinStampRaw).trim() === '')\n      ? 'NULL'\n      : ` '${String(snapWinStampRaw).replace(/'/g, \"''\")}' `;\n\n    return `\n      UPDATE ${cfg.db.schema}.${cfg.db.table}\n      SET estado_flujo = '${snapEstado}',\n          fecha_reagenda = ${snapFechaReagendaSql},\n          intentos_llamada = ${snapIntentosSql},\n          win_tries = ${snapWinTriesSql},\n          telefono_index = ${snapTelIndexSql},\n          win_stamp = ${snapWinStampSql},\n          fecha_ultima_llamada = ${snapFechaUltSql},\n          updated_at = now()\n      WHERE id_negocio = '${cedula}'\n      RETURNING *;\n    `;\n  }\n\n  return `\n    UPDATE ${cfg.db.schema}.${cfg.db.table}\n    SET estado_flujo = '${cfg.states.pending}',\n        fecha_reagenda = NULL,\n        intentos_llamada = 0,\n        win_tries = 0,\n        telefono_index = 0,\n        win_stamp = NULL,\n        fecha_ultima_llamada = NULL,\n        updated_at = now()\n    WHERE id_negocio = '${cedula}'\n    RETURNING *;\n  `;\n})() }}",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-660, 220],
-      "id": "32a4800d-ab2c-4106-ac2a-fe917a2ef62e",
+      "position": [
+        -120,
+        100
+      ],
+      "id": "0e95e5e0-e874-45d1-bb42-6379fc361a15",
       "name": "FALLBACK RESTORE",
       "credentials": {
         "postgres": {
@@ -669,6 +714,26 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2760,
+        200
+      ],
+      "id": "cccf6d9f-588a-45e9-8299-99d32cadaddc",
+      "name": "EJECUTA ESTO CADA 20 SEG"
     }
   ],
   "pinData": {},
@@ -678,17 +743,6 @@
         [
           {
             "node": "BUSCA Y BLOQUEA REGISTRO",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "EJECUTA ESTO CADA 60 SEG": {
-      "main": [
-        [
-          {
-            "node": "CONFIG INICIAL UTPL",
             "type": "main",
             "index": 0
           }
@@ -861,16 +915,27 @@
           }
         ]
       ]
+    },
+    "EJECUTA ESTO CADA 20 SEG": {
+      "main": [
+        [
+          {
+            "node": "CONFIG INICIAL UTPL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "b6f1f1a1-a000-4000-9000-000000000001",
+  "versionId": "40562645-23da-4819-ad0d-7e589e80e357",
   "meta": {
     "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
   },
-  "id": "N0uWFbRxqWFU7xk4",
+  "id": "0JNdbkn7C7gnpO1j",
   "tags": []
 }

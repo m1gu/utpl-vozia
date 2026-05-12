@@ -9,7 +9,10 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [40, 100],
+      "position": [
+        40,
+        100
+      ],
       "id": "webhook-utpl-entrada-001",
       "name": "Webhook ALTIVA UTPL",
       "webhookId": "utpl-entrada-datos-wh"
@@ -21,17 +24,23 @@
       },
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
-      "position": [300, 80],
+      "position": [
+        300,
+        80
+      ],
       "id": "split-utpl-leads",
       "name": "PROCESA 1 POR UNO"
     },
     {
       "parameters": {
-        "jsCode": "return items.map(item =\u003e {\n  const lead = $items(\u0027PROCESA 1 POR UNO\u0027, 0, 0)[0].json || item.json;\n\n  // Phones: ALTIVA \u002D\u003E utpl_registros\n  const phones = [\n    lead.ph_celular,\n    lead.ph_celular2,\n    lead.ph_residencial,\n    lead.ph_residencial2,\n    lead.ph_comercial,\n    lead.ph_telefono4\n  ];\n\n  return {\n    json: {\n      cedula: String(lead.cedula || \u0027\u0027).trim(),\n      nombre: String(lead.nombre || \u0027\u0027).trim(),\n      apellido: String(lead.apellido || \u0027\u0027).trim(),\n      producto: String(lead.producto || \u0027\u0027).trim(),\n      modalidad: String(lead.modalidad || \u0027\u0027).trim().toUpperCase(),\n      telefono1: phones[0] || null,\n      telefono2: phones[1] || null,\n      telefono3: phones[2] || null,\n      telefono4: phones[3] || null,\n      telefono5: phones[4] || null,\n      telefono6: phones[5] || null\n    }\n  };\n});"
+        "jsCode": "return items.map(item => {\n  const lead = $items('PROCESA 1 POR UNO', 0, 0)[0].json || item.json;\n  const idNegocio = String(lead.id_negocio || lead.id_registro || lead.cedula || '').trim();\n  return { json: { id_negocio: idNegocio, => {\n  const lead = $items('PROCESA 1 POR UNO', 0, 0)[0].json || item.json;\n\n  // Phones: ALTIVA -> utpl_registros\n  const phones = [\n    lead.ph_celular,\n    lead.ph_celular2,\n    lead.ph_residencial,\n    lead.ph_residencial2,\n    lead.ph_comercial,\n    lead.ph_telefono4\n  ];\n\n  id_negocio: idNegocio,\n      cedula: String(lead.cedula || '').trim(),\n      nombre: String(lead.nombre || '').trim(),\n      apellido: String(lead.apellido || '').trim(),\n      producto: String(lead.producto || '').trim(),\n      modalidad: String(lead.modalidad || '').trim().toUpperCase(),\n      telefono1: phones[0] || null,\n      telefono2: phones[1] || null,\n      telefono3: phones[2] || null,\n      telefono4: phones[3] || null,\n      telefono5: phones[4] || null,\n      telefono6: phones[5] || null\n    }\n  };\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [520, 60],
+      "position": [
+        520,
+        60
+      ],
       "id": "map-utpl-fields",
       "name": "MAPEA CAMPOS UTPL"
     },
@@ -51,6 +60,7 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
+            "id_negocio": "={{ String($json.id_negocio || '') }}",
             "cedula": "={{ String($json.cedula || '') }}",
             "nombre": "={{ $json.nombre }}",
             "apellido": "={{ $json.apellido }}",
@@ -63,8 +73,19 @@
             "telefono5": "={{ $json.telefono5 }}",
             "telefono6": "={{ $json.telefono6 }}"
           },
-          "matchingColumns": ["cedula"],
+          "matchingColumns": [
+            "id_negocio"
+          ],
           "schema": [
+            {
+              "id": "id_negocio",
+              "displayName": "id_negocio",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
             {
               "id": "cedula",
               "displayName": "cedula",
@@ -170,7 +191,10 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [780, 40],
+      "position": [
+        780,
+        40
+      ],
       "id": "upsert-utpl-registros",
       "name": "GUARDA EN UTPL REGISTROS",
       "credentials": {

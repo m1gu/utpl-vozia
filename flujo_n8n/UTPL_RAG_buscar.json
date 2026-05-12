@@ -1,0 +1,292 @@
+{
+  "name": "UTPL_RAG_buscar",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "utpl-rag-buscar",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        300,
+        140
+      ],
+      "id": "6ee3662f-89d4-4d84-976d-12ca6a816ef5",
+      "name": "Webhook RAG Buscar",
+      "webhookId": "utpl-rag-buscar-wh"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const root = item.json.body || item.json || {};\n  const msg = root.message || root;\n\n  // Extraer toolCallId y arguments del formato Vapi\n  const toolCalls = msg.toolCallList || msg.toolCalls || [];\n  const firstCall = (Array.isArray(toolCalls) ? toolCalls[0] : toolCalls) || {};\n  const args = firstCall.function?.arguments || firstCall.arguments || {};\n  const toolCallId = firstCall.id || firstCall.toolCallId || root.toolCallId || '';\n\n  const pregunta = String(args.pregunta || root.pregunta || '').trim();\n  const modalidad = String(args.modalidad || root.modalidad || '').trim().toUpperCase();\n\n  if (!pregunta) {\n    item.json.toolCallId = toolCallId;\n    item.json.error = 'Falta el campo pregunta';\n    return item;\n  }\n\n  item.json.toolCallId = toolCallId;\n  item.json.pregunta_original = pregunta;\n  item.json.modalidad_filtro = modalidad || null;\n  item.json.openai_request = {\n    model: 'text-embedding-3-small',\n    input: pregunta\n  };\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        140
+      ],
+      "id": "32c56144-fd3c-406f-a4c7-bc952eb6b4ca",
+      "name": "PREPARA EMBEDDING"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        740,
+        140
+      ],
+      "id": "0e5633fb-f8c6-48e3-b729-d73f8a947555",
+      "name": "TIENE PREGUNTA?"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    results: [{\n      toolCallId: item.json.toolCallId || '',\n      result: 'Error: ' + (item.json.error || 'Falta la pregunta')\n    }]\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        40
+      ],
+      "id": "f6c20277-ff36-40ba-b53a-ca94aade639f",
+      "name": "RESPUESTA ERROR"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer CAMBIA_POR_TU_OPENAI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.openai_request) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        240
+      ],
+      "id": "fe72d192-0a0b-4362-a5d4-b1d2652d2211",
+      "name": "OPENAI EMBEDDINGS"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const embedding = item.json.data?.[0]?.embedding;\n  if (!embedding) {\n    item.json.error = 'No se pudo generar el embedding';\n    return item;\n  }\n  item.json.embedding_vector = JSON.stringify(embedding);\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        240
+      ],
+      "id": "0644fc14-995c-438d-9e0a-9bb813af4785",
+      "name": "EXTRAE VECTOR"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ (() => {\n  const vector = $json.embedding_vector;\n  const mod = $json.modalidad_filtro;\n  const modParam = mod ? `'${mod.replace(/'/g, \"''\")}'` : 'NULL';\n  return `SELECT * FROM buscar_conocimiento_utpl('${vector}'::vector, ${modParam}, 3);`;\n})() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1440,
+        240
+      ],
+      "id": "5cba8f7c-9f7d-4e55-aed8-257ba4a335f0",
+      "name": "BUSCAR EN SUPABASE",
+      "credentials": {
+        "postgres": {
+          "id": "Iz7EEp0WgJu3LXhn",
+          "name": "Gea_postgress"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const rows = $items('BUSCAR EN SUPABASE', 0, 0).filter(r => r.json.id);\n  const toolCallId = $items('PREPARA EMBEDDING', 0, 0)[0]?.json?.toolCallId || '';\n\n  let respuesta = '';\n  if (rows.length === 0) {\n    respuesta = 'No encontre informacion sobre eso en la base de conocimiento. Indica al estudiante que puedes agendarle con un ejecutivo de UTPL para mas informacion.';\n  } else {\n    const contexto = rows.map((r, i) =>\n      `[${i + 1}] (${r.json.fuente || 'general'}) ${r.json.contenido}`\n    ).join('\\n\\n');\n    respuesta = contexto + '\\n\\nInstruccion: Usa esta informacion para responder al estudiante de forma natural, clara y amigable. No inventes datos. Si la info es insuficiente, consulta agendar a un ejecutivo de UTPL .';\n  }\n\n  return { json: {\n    results: [{\n      toolCallId: toolCallId,\n      result: respuesta\n    }]\n  }};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1660,
+        240
+      ],
+      "id": "b6967f97-83b9-420a-a77b-e4e8baa4d40f",
+      "name": "FORMATEA RESPUESTA"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1880,
+        240
+      ],
+      "id": "07290508-c9de-49bb-b1dc-dbe852b33fd8",
+      "name": "RESPONDE A VAPI"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook RAG Buscar": {
+      "main": [
+        [
+          {
+            "node": "PREPARA EMBEDDING",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PREPARA EMBEDDING": {
+      "main": [
+        [
+          {
+            "node": "TIENE PREGUNTA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TIENE PREGUNTA?": {
+      "main": [
+        [
+          {
+            "node": "RESPUESTA ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OPENAI EMBEDDINGS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OPENAI EMBEDDINGS": {
+      "main": [
+        [
+          {
+            "node": "EXTRAE VECTOR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EXTRAE VECTOR": {
+      "main": [
+        [
+          {
+            "node": "BUSCAR EN SUPABASE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BUSCAR EN SUPABASE": {
+      "main": [
+        [
+          {
+            "node": "FORMATEA RESPUESTA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORMATEA RESPUESTA": {
+      "main": [
+        [
+          {
+            "node": "RESPONDE A VAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESPUESTA ERROR": {
+      "main": [
+        [
+          {
+            "node": "RESPONDE A VAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d21d67ba-d6a2-48d3-9f29-3a5035f75385",
+  "meta": {
+    "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
+  },
+  "id": "sAmgXeD1UUrpd8M1",
+  "tags": []
+}
