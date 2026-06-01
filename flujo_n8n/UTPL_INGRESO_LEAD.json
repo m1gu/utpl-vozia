@@ -3,23 +3,100 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "utpl-ingreso-lead",
-        "responseMode": "responseNode",
+        "jsCode": "return items.map(item => {\n  const errMsg = item.json?.message || item.json?.error || 'Error desconocido';\n  return {\n    json: {\n      codigo: 500,\n      mensaje: 'Error interno al procesar el lead: ' + errMsg,\n      data: null\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        120
+      ],
+      "id": "b9ff9aa5-f8b4-47f2-8d9a-d1aba0226b07",
+      "name": "FORMATEA ALERTA ERROR"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    codigo: 200,\n    mensaje: 'Lead procesado correctamente',\n    data: {\n      id_negocio: item.json.id_negocio || null,\n      accion: 'procesado'\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        -140
+      ],
+      "id": "50d09a46-e112-4bd8-aafd-0470ede4b595",
+      "name": "RESPUESTA 200 OK"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}",
         "options": {}
       },
-      "type": "n8n-nodes-base.webhook",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        540,
+        -80
+      ],
+      "id": "c87c3b4a-1bdb-4f88-9718-c69f488a7469",
+      "name": "GUARDA LEAD EN UTPL REGISTROS",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "Iz7EEp0WgJu3LXhn",
+          "name": "Gea_postgress"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const raw = item.json.body || item.json || {};\n\n  // Separar nombres_completos_persona en nombre y apellido\n  const fullName = String(raw.nombres_completos_persona || '').trim();\n  const words = fullName.split(/\\s+/).filter(w => w.length > 0);\n  let nombre = '';\n  let apellido = '';\n\n  if (words.length === 0) {\n    nombre = '';\n    apellido = '';\n  } else if (words.length === 1) {\n    nombre = words[0];\n    apellido = '';\n  } else {\n    const splitPoint = Math.max(1, Math.floor(words.length / 2));\n    nombre = words.slice(0, splitPoint).join(' ');\n    apellido = words.slice(splitPoint).join(' ');\n  }\n\n  // Normalizar modalidad desde nombre_campania\n  const campania = (raw.nombre_campania || '').trim().toUpperCase();\n\n  const modalidadPOSGRADO = [\n    'ADMISION POS', 'ATRACCION BECAS POS', 'ATRACCION POS',\n    'CIERRE POS', 'RETENCION POS', 'ATRACCION FP', 'CIERRE FP'\n  ];\n  const modalidadMEL = [\n    'ATRACCION BECAS MEL', 'ATRACCION MEL', 'CIERRE MEL',\n    'INBOUND', 'INTERRUPCION TEMPORAL', 'REINGRESO ESPECIAL',\n    'REINGRESO GENERAL', 'REMATRICULA', 'RETENCION MEL'\n  ];\n  const modalidadTEC = [\n    'ATRACCION BECAS TEC', 'ATRACCION TEC', 'CIERRE TEC',\n    'RETENCION TEC'\n  ];\n\n  let modalidad = '';\n  if (modalidadPOSGRADO.includes(campania)) {\n    modalidad = 'POSGRADO';\n  } else if (modalidadMEL.includes(campania)) {\n    modalidad = 'MODALIDAD EN LINEA';\n  } else if (modalidadTEC.includes(campania)) {\n    modalidad = 'TECNOLÓGICO';\n  }\n\n  return {\n    json: {\n      id_negocio: String(raw.id_negocio || '').trim(),\n      id_interno_negocio: String(raw.id_interno_negocio || '').trim(),\n      cedula: String(raw.id_persona || '').trim(),\n      nombre: nombre,\n      apellido: apellido,\n      modalidad: modalidad,\n      producto: String(raw.nombre_producto_interes || '').trim(),\n      telefono1: String(raw.celular_persona || '').trim(),\n      estado_flujo: 'PENDIENTE',\n      tipo_solicitud: String(raw.tipo_solicitud || '').trim(),\n      nombre_corto_campania: String(raw.nombre_corto_campania || '').trim()\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-800, 400],
-      "id": "wh-ingreso-lead-utpl",
-      "name": "Webhook Ingreso Lead",
-      "webhookId": "utpl-ingreso-lead-wh"
+      "position": [
+        300,
+        -80
+      ],
+      "id": "db81b1d6-2cb2-4d0f-a40d-7f7d0e3af374",
+      "name": "NORMALIZA Y MAPEA LEAD"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const esc = function(s) { return String(s || '').replace(/'/g, \"''\"); };\n  const esFiniquitar = String(item.json.tipo_solicitud || '').trim().toLowerCase() === 'finiquitar';\n\n  const setClauses = [\n    'id_interno_negocio = EXCLUDED.id_interno_negocio',\n    'cedula = EXCLUDED.cedula',\n    'nombre = EXCLUDED.nombre',\n    'apellido = EXCLUDED.apellido',\n    'modalidad = EXCLUDED.modalidad',\n    'producto = EXCLUDED.producto',\n    'telefono1 = EXCLUDED.telefono1',\n    'nombre_corto_campania = EXCLUDED.nombre_corto_campania'\n  ];\n  if (esFiniquitar) setClauses.push(\"estado_flujo = 'FINALIZADO'\");\n  setClauses.push('updated_at = now()');\n\n  item.json.query = `INSERT INTO public.utpl_registros (id_negocio, id_interno_negocio, cedula, nombre, apellido, modalidad, producto, telefono1, nombre_corto_campania, estado_flujo, updated_at) VALUES ('${esc(item.json.id_negocio)}', '${esc(item.json.id_interno_negocio)}', '${esc(item.json.cedula)}', '${esc(item.json.nombre)}', '${esc(item.json.apellido)}', '${esc(item.json.modalidad)}', '${esc(item.json.producto)}', '${esc(item.json.telefono1)}', '${esc(item.json.nombre_corto_campania)}', 'PENDIENTE', now()) ON CONFLICT (id_negocio) DO UPDATE SET ${setClauses.join(', ')} RETURNING id_negocio, estado_flujo;`;\n\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        -80
+      ],
+      "id": "gen-sql-ingreso-001",
+      "name": "GENERA SQL INGRESO"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    codigo: 401,\n    mensaje: 'No autorizado: token x-api-auth invalido',\n    data: null\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        160
+      ],
+      "id": "a1c44090-224a-4747-b263-f379a766d198",
+      "name": "RESPUESTA 401"
     },
     {
       "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
+            "leftValue": "",
             "typeValidation": "strict",
             "version": 2
           },
@@ -40,205 +117,68 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-560, 400],
-      "id": "if-auth-check",
+      "position": [
+        60,
+        20
+      ],
+      "id": "d6e5cf15-6ca4-4f61-abc1-4172549c047d",
       "name": "VALIDA API AUTH"
     },
     {
       "parameters": {
-        "jsCode": "return items.map(item => ({\n  json: {\n    status: 401,\n    body: { status: 'error', message: 'Unauthorized: token x-api-auth invalido' }\n  }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-320, 600],
-      "id": "code-401-response",
-      "name": "RESPUESTA 401"
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json.body) }}",
-        "options": {
-          "responseCode": 401,
-          "responseHeaders": {
-            "entries": [
-              { "name": "Content-Type", "value": "application/json" }
-            ]
-          }
-        }
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.2,
-      "position": [-80, 600],
-      "id": "respond-401",
-      "name": "RESPONDE 401"
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => {\n  const raw = item.json.body || item.json || {};\n\n  // Separar nombres_completos_persona en nombre y apellido\n  const fullName = String(raw.nombres_completos_persona || '').trim();\n  const words = fullName.split(/\\s+/).filter(w => w.length > 0);\n  let nombre = '';\n  let apellido = '';\n\n  if (words.length === 0) {\n    nombre = '';\n    apellido = '';\n  } else if (words.length === 1) {\n    nombre = words[0];\n    apellido = '';\n  } else {\n    const splitPoint = Math.max(1, Math.floor(words.length / 2));\n    nombre = words.slice(0, splitPoint).join(' ');\n    apellido = words.slice(splitPoint).join(' ');\n  }\n\n  // Normalizar modalidad\n  const modalidadRaw = String(raw.audiencia_negocio || '').trim().toUpperCase();\n  const modalidadMap = {\n    'EN LINEA': 'MODALIDAD EN LINEA',\n    'LINEA': 'MODALIDAD EN LINEA',\n    'MEL': 'MODALIDAD EN LINEA',\n    'MODALIDAD EN LINEA': 'MODALIDAD EN LINEA',\n    'POSGRADO': 'POSGRADO',\n    'MAESTRIA': 'POSGRADO',\n    'TECNOLOGICO': 'TECNOLOGICO',\n    'TECNOLOGIA': 'TECNOLOGICO'\n  };\n  const modalidad = modalidadMap[modalidadRaw] || modalidadRaw;\n\n  return {\n    json: {\n      id_negocio: String(raw.id_negocio || '').trim(),\n      cedula: String(raw.id_persona || '').trim(),\n      nombre: nombre,\n      apellido: apellido,\n      modalidad: modalidad,\n      producto: String(raw.nombre_producto_interes || '').trim(),\n      telefono1: String(raw.celular_persona || '').trim(),\n      estado_flujo: 'PENDIENTE'\n    }\n  };\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-320, 300],
-      "id": "code-normalize-lead",
-      "name": "NORMALIZA Y MAPEA LEAD"
-    },
-    {
-      "parameters": {
-        "operation": "upsert",
-        "schema": {
-          "__rl": true,
-          "mode": "list",
-          "value": "public"
-        },
-        "table": {
-          "__rl": true,
-          "mode": "list",
-          "value": "utpl_registros"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "id_negocio": "={{ String($json.id_negocio || '') }}",
-            "cedula": "={{ String($json.cedula || '') }}",
-            "nombre": "={{ $json.nombre }}",
-            "apellido": "={{ $json.apellido }}",
-            "modalidad": "={{ $json.modalidad }}",
-            "producto": "={{ $json.producto }}",
-            "telefono1": "={{ $json.telefono1 }}"
-          },
-          "matchingColumns": ["id_negocio"],
-          "schema": [
-            {
-              "id": "id_negocio",
-              "displayName": "id_negocio",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "cedula",
-              "displayName": "cedula",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "nombre",
-              "displayName": "nombre",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "apellido",
-              "displayName": "apellido",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "modalidad",
-              "displayName": "modalidad",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "producto",
-              "displayName": "producto",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "telefono1",
-              "displayName": "telefono1",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            }
-          ]
-        },
+        "httpMethod": "POST",
+        "path": "utpl-ingreso-lead",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [-80, 300],
-      "id": "pg-upsert-lead",
-      "name": "GUARDA LEAD EN UTPL REGISTROS",
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 2000,
-      "credentials": {
-        "postgres": {
-          "id": "Iz7EEp0WgJu3LXhn",
-          "name": "Gea_postgress"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => ({\n  json: {\n    status: 200,\n    body: {\n      status: 'success',\n      message: 'Lead saved in Supabase',\n      id_negocio: item.json.id_negocio || null,\n      cedula: item.json.cedula || null\n    }\n  }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
+      "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [160, 300],
-      "id": "code-success-response",
-      "name": "RESPUESTA 200 OK"
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json.body) }}",
-        "options": {
-          "responseCode": 200,
-          "responseHeaders": {
-            "entries": [
-              { "name": "Content-Type", "value": "application/json" }
-            ]
-          }
-        }
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.2,
-      "position": [400, 300],
-      "id": "respond-200",
-      "name": "RESPONDE 200 OK"
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => {\n  const errMsg = item.json?.message || item.json?.error || JSON.stringify(item.json);\n  return {\n    json: {\n      alert_type: 'error',\n      service: 'UTPL_INGRESO_LEAD',\n      error: 'Fallo al insertar lead en Supabase',\n      details: errMsg,\n      timestamp: new Date().toISOString(),\n      payload: item.json\n    }\n  };\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [160, 500],
-      "id": "code-error-alert",
-      "name": "FORMATEA ALERTA ERROR"
+      "position": [
+        -180,
+        20
+      ],
+      "id": "26fe8662-2c1f-4fe9-97c0-c7f8ed14172e",
+      "name": "Webhook Ingreso Lead",
+      "webhookId": "utpl-ingreso-lead-wh"
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook Ingreso Lead": {
+    "GUARDA LEAD EN UTPL REGISTROS": {
       "main": [
         [
           {
-            "node": "VALIDA API AUTH",
+            "node": "RESPUESTA 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORMATEA ALERTA ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NORMALIZA Y MAPEA LEAD": {
+      "main": [
+        [
+          {
+            "node": "GENERA SQL INGRESO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GENERA SQL INGRESO": {
+      "main": [
+        [
+          {
+            "node": "GUARDA LEAD EN UTPL REGISTROS",
             "type": "main",
             "index": 0
           }
@@ -263,51 +203,11 @@
         ]
       ]
     },
-    "RESPUESTA 401": {
+    "Webhook Ingreso Lead": {
       "main": [
         [
           {
-            "node": "RESPONDE 401",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "NORMALIZA Y MAPEA LEAD": {
-      "main": [
-        [
-          {
-            "node": "GUARDA LEAD EN UTPL REGISTROS",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GUARDA LEAD EN UTPL REGISTROS": {
-      "main": [
-        [
-          {
-            "node": "RESPUESTA 200 OK",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "FORMATEA ALERTA ERROR",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "RESPUESTA 200 OK": {
-      "main": [
-        [
-          {
-            "node": "RESPONDE 200 OK",
+            "node": "VALIDA API AUTH",
             "type": "main",
             "index": 0
           }
@@ -315,14 +215,14 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "utpl-ingreso-lead-v1",
+  "versionId": "a81d8468-bd71-436d-a499-58867777d245",
   "meta": {
     "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
   },
-  "id": "UTPL-INGRESO-LEAD-001",
+  "id": "p0hdq3W99YdEY9sv",
   "tags": []
 }

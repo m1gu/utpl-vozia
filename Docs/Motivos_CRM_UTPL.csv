@@ -1,0 +1,27 @@
+Estado de embudo de ventas,"Id interno (Producción)
+Para propiedad dealstage",Subestado de embudo de ventas,Descripción,"Id interno (Producción)
+Para propiedad hs_call_disposition"
+NO INTERESADO,1020923926,NIN - Equivocado,Número no pertenece al titular y a nadie que pueda conocerlo. ,ec04d345-b217-43b8-886c-483caaef1207
+,1020923926,NIN - IVR De Empresa,Número pertenece a fax de empresas. ,ff2dbd7a-febb-418e-b5f7-a79b21630d4a
+NO INTERESADO,1020923926,NIN - Continuara por si solo,"El prospecto si se encuentra interesado en realizar el proceso de matrícula, sin embargo, desea realizarlo por su cuenta o en un centro universitario. ",6ec7dafd-36c9-4ac7-8fa4-aaf1d5e655ff
+,1020923926,NIN - Titular Esta Fuera Del Pais,Se utiliza cuando el titular vive fuera del pais o se encontrara afuera por un largo periodo de tiempo. ,9bb49857-d693-455f-a719-7da52a3c267f
+,1020923926,NIN - Tercero o Familiar Pide No Llamar,"Se utiliza cuando atiende la llamada una tercera persona e indica que si conoce al titular, sin embargo, no proporcionará números de contactos u horario para poder comunicarnos. Pide no volver a llamar a su número. ",eb503640-7ac4-4296-be4d-19925e5b5c9f
+,1020923926,NIN - Neg-Costos-No Tiene Dinero,No posee la capacidad económica para pagar su matrícula a pesar de los descuentos y formas de pago que ofrece UTPL. ,db9d6ca8-d46a-429b-a54c-ea911f60dc1d
+,1020923926,NIN - Neg-Pers-Problemas De Salud,Posee una problema de salud grave que le impide estudiar en el ciclo academico vigente. ,b4bac679-2b71-4b0e-bdc3-5ffaac245d4a
+,1020923926,NIN - Informacion Para Un Familiar,Es utilizado cuando la información es solicitada por algún familiar y no por la persona que desea estudiar. ,7157a907-42d1-4ba1-a302-bc8c6fe7757d
+,1020923926,NIN - Neg-Pers-Aun No Es Bachiller,Aún no ha terminado el colegio y no lo terminará sino hasta en fechas posteriores al fin de matrículas en UTPL,946823bc-a033-47ab-9461-56bbe36ba649
+,1020923926,NIN - Negativa-Pers-Titular Fallecido,La persona que solicito la información ha fallecido. ,fca8fec9-9636-46e8-b08c-51f95a1861f9
+,1020923926,NIN - Estudiante Utpl 2Do. En Adelante,Se utiliza cuando el estudiante es continuo. ,7b45b4fe-69f6-4b74-b14a-39b16f7df70f
+,1020923926,NIN - Negativa-Pers-Trabaja En La Utpl,Trabaja en UTPL y la llamada era una prueba. ,ed5610f2-00e8-4284-b62e-0becd4b25e9a
+,1020923926,NIN - Neg-Academicos-Interesado En Maestria,Es utilizado cuando el prospecto tiene un interes por alguna posgrados y no por una carrera de grado. ,2efa7cc1-9785-401b-b13e-b133c42ae62e
+,1020923926,NIN - Indica Que No Ha Solicitado Informacion,Es utilizado cuando el prospecto menciona que nunca ha solicitado información sobre UTPL. ,491f0fd2-b01e-43fa-b0e7-8e4a59e1abb9
+,1020923926,NIN - Neg-Academicos-Mala Experiencia Con Utpl,Ha recibido una mala atención o menciona que no lo ayudaron con el requerimiento que solicitó. En estos casos el prospecto ya no desea recibir llamadas de UTPL. ,2ba903ac-d1f4-43f3-89c9-1adc67b373c0
+,1020923926,NIN - Neg-Tiempo-No Tiene Tiempo Para Estudiar,"A pesar de mencionarle sobre la modalidad de estudio en linea, menciona que no tendrá tiempo para dedicarle al estudio. ",5fadfbe1-909d-44e1-84d7-63a8a184cc7f
+,1020923926,NIN - No Esta Interesado En Modalidad En Linea,No le interesa la modalidad de estudio en linea,6ab24c69-4728-48d2-8950-36d6fd47627d
+,1020923926,NIN - No Desea Continuar Con Proceso Matricula,Se utiliza cuando la persona no menciona los motivos de porque no desea estudiar. ,f6cf9978-e0e0-4cd9-9605-3e4baca78289
+,1020923926,NIN - Neg-Academicos-Estudia Ahora En Otra Univ,Se utiliza cuando el prospecto ya se encuentra estudiando en otra universidad. ,7b7283a7-dd21-4601-962d-7f867f0dcb3a
+,1020923926,NIN - Neg-Academicos-Carreras Ofertads No Desea,Se utiliza cuando la carrera que solicita el prospecto no se oferta en UTPL. ,f6828cdb-b9c4-4e4b-a3f0-cc8e372c232f
+,1020923926,NIN - Neg-Académicos-Interesado Cursos Form. Perm,Es utilizado cuando el prospecto tiene un interes por alguna oferta de cursos y no por una carrera de grado. ,ee5da155-3a0f-41fd-82e5-72a99d3f19d9
+,1020923926,NIN - Interesado Proximo periodo,Es utilziado cuando el prospecto indica que se va a matricular el próximo periodo,c941a32d-0909-46f4-a72b-ca94adbde489
+,1020923926,NIN - No Localizable,Es utilizado cuando no se puede localizar al prospecto,fa9b4696-95d1-4b4a-906f-4b0b7b7f155b
+NO CONTACTO,1008735099,NC - No Contacto,Número llamado direcciona directamente al buzón de voz. ,569d4307-4da7-45e0-9c5a-7530a99aca5d

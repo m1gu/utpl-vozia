@@ -1,0 +1,103 @@
+{
+  "name": "Utpl-PruebasLlamadas",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "utpl-pruebas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f7c79d56-c593-4366-bd10-135a824f3df9",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -40
+      ],
+      "webhookId": "09819cd6-5f5c-4cd5-a0ea-73595eb5bc32"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "b0598290-5260-4be9-a62a-56db5e40e79c",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe9a42f5-b2fb-4ba7-99d9-05d045d65609",
+              "name": "html",
+              "value": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>UTPL - Pruebas Vapi</title>\n<style>\n  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n  body {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f2b4a 100%);\n    min-height: 100vh;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 20px;\n  }\n  .container { width: 100%; max-width: 520px; }\n  .header {\n    text-align: center;\n    margin-bottom: 24px;\n  }\n  .header .logo {\n    font-size: 14px;\n    font-weight: 600;\n    color: #60a5fa;\n    letter-spacing: 3px;\n    text-transform: uppercase;\n    margin-bottom: 4px;\n  }\n  .header h1 {\n    font-size: 26px;\n    color: #f1f5f9;\n    font-weight: 700;\n  }\n  .card {\n    background: #ffffff;\n    border-radius: 16px;\n    padding: 32px;\n    box-shadow: 0 20px 60px rgba(0,0,0,0.3);\n  }\n  .form-group {\n    margin-bottom: 18px;\n  }\n  .form-group label {\n    display: block;\n    font-size: 13px;\n    font-weight: 600;\n    color: #334155;\n    margin-bottom: 6px;\n    letter-spacing: 0.3px;\n  }\n  .form-group input,\n  .form-group select {\n    width: 100%;\n    padding: 11px 14px;\n    border: 2px solid #e2e8f0;\n    border-radius: 10px;\n    font-size: 14px;\n    color: #1e293b;\n    background: #f8fafc;\n    transition: border-color 0.2s, box-shadow 0.2s;\n    outline: none;\n  }\n  .form-group input:focus,\n  .form-group select:focus {\n    border-color: #3b82f6;\n    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);\n    background: #fff;\n  }\n  .form-group input::placeholder { color: #94a3b8; }\n  .row {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 14px;\n  }\n  .btn {\n    width: 100%;\n    padding: 13px;\n    border: none;\n    border-radius: 10px;\n    font-size: 15px;\n    font-weight: 700;\n    cursor: pointer;\n    transition: all 0.2s;\n    letter-spacing: 0.5px;\n    margin-top: 6px;\n  }\n  .btn-primary {\n    background: linear-gradient(135deg, #2563eb, #1d4ed8);\n    color: #fff;\n    box-shadow: 0 4px 14px rgba(37,99,235,0.4);\n  }\n  .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); transform: translateY(-1px); }\n  .btn-primary:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; transform: none; }\n  .btn-reset {\n    background: #f1f5f9;\n    color: #475569;\n    margin-top: 10px;\n    box-shadow: none;\n  }\n  .btn-reset:hover { background: #e2e8f0; }\n  .result {\n    margin-top: 20px;\n    padding: 20px;\n    border-radius: 12px;\n    font-size: 14px;\n    display: none;\n  }\n  .result.visible {\n    display: block;\n    animation: slideIn 0.3s ease;\n  }\n  @keyframes slideIn {\n    from { opacity: 0; transform: translateY(-8px); }\n    to { opacity: 1; transform: translateY(0); }\n  }\n  .result.success {\n    background: #f0fdf4;\n    border: 2px solid #22c55e;\n  }\n  .result.error {\n    background: #fef2f2;\n    border: 2px solid #ef4444;\n  }\n  .result-head {\n    display: flex;\n    align-items: center;\n    gap: 12px;\n    margin-bottom: 8px;\n  }\n  .result-icon {\n    width: 32px;\n    height: 32px;\n    border-radius: 50%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    flex-shrink: 0;\n  }\n  .result-icon.success { background: #22c55e; }\n  .result-icon.error { background: #ef4444; }\n  .result-icon svg { width: 18px; height: 18px; }\n  .result-title {\n    font-size: 16px;\n    font-weight: 700;\n    color: #1e293b;\n  }\n  .result-msg {\n    color: #475569;\n    margin-bottom: 6px;\n    line-height: 1.5;\n  }\n  .result-details {\n    margin-top: 12px;\n    padding: 12px;\n    background: rgba(0,0,0,0.04);\n    border-radius: 8px;\n    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;\n    font-size: 12px;\n    color: #334155;\n    white-space: pre-wrap;\n    word-break: break-all;\n    max-height: 200px;\n    overflow-y: auto;\n    line-height: 1.6;\n  }\n  .result-meta {\n    display: flex;\n    gap: 16px;\n    flex-wrap: wrap;\n    margin-top: 8px;\n    font-size: 12px;\n    color: #64748b;\n  }\n  .result-meta span { display: flex; align-items: center; gap: 4px; }\n  .result-meta strong { color: #334155; }\n  .section-title {\n    font-size: 11px;\n    font-weight: 700;\n    color: #94a3b8;\n    text-transform: uppercase;\n    letter-spacing: 1.5px;\n    margin-bottom: 14px;\n    margin-top: 6px;\n    padding-top: 14px;\n    border-top: 1px solid #e2e8f0;\n  }\n  .spinner {\n    display: inline-block;\n    width: 16px;\n    height: 16px;\n    border: 2px solid rgba(255,255,255,0.3);\n    border-top-color: #fff;\n    border-radius: 50%;\n    animation: spin 0.6s linear infinite;\n    margin-right: 8px;\n    vertical-align: middle;\n  }\n  @keyframes spin { to { transform: rotate(360deg); } }\n  .badge {\n    display: inline-block;\n    padding: 3px 8px;\n    border-radius: 6px;\n    font-size: 10px;\n    font-weight: 700;\n    letter-spacing: 0.5px;\n  }\n</style>\n</head>\n<body>\n<div class=\"container\">\n  <div class=\"header\">\n    <div class=\"logo\">UTPL</div>\n    <h1>Pruebas Vapi</h1>\n  </div>\n  <div class=\"card\">\n    <form id=\"vapiForm\">\n      <div class=\"form-group\">\n        <label>Asistente Vapi</label>\n        <select id=\"assistant\" required>\n          <option value=\"\">-- Seleccionar --</option>\n          <option value=\"cc4bbac0-0736-48f6-8175-0bfe4c4e8a76\">UTPL MEL - MODALIDAD EN LINEA</option>\n          <option value=\"d61d17dc-6e48-4ce7-bfdb-3dc40dcd329e\">UTPL POSGRADO</option>\n          <option value=\"638fb59f-0522-4d76-9ca4-a47609f64961\">UTPL TECNOLÓGICO</option>\n        </select>\n      </div>\n      <div class=\"row\">\n        <div class=\"form-group\">\n          <label>Modalidad</label>\n          <select id=\"modalidad\" required>\n            <option value=\"\">-- Seleccionar --</option>\n            <option value=\"MODALIDAD EN LINEA\">MODALIDAD EN LINEA</option>\n            <option value=\"POSGRADO\">POSGRADO</option>\n            <option value=\"TECNOLÓGICO\">TECNOLÓGICO</option>\n          </select>\n        </div>\n        <div class=\"form-group\">\n          <label>Nombre del Producto</label>\n          <input type=\"text\" id=\"nombre_producto\" placeholder=\"ej: Marketing\" value=\"Marketing\">\n        </div>\n      </div>\n      <div class=\"row\">\n        <div class=\"form-group\">\n          <label>Primer Nombre</label>\n          <input type=\"text\" id=\"primer_nombre\" placeholder=\"ej: María\" value=\"María\">\n        </div>\n        <div class=\"form-group\">\n          <label>Nombre Completo del Cliente</label>\n          <input type=\"text\" id=\"nombre_cliente\" placeholder=\"ej: María Pérez López\" value=\"María Pérez López\">\n        </div>\n      </div>\n      <div class=\"form-group\">\n        <label>Teléfono</label>\n        <input type=\"text\" id=\"telefono\" placeholder=\"ej: +593991234567\" value=\"+593991234567\" required>\n      </div>\n\n      <div class=\"section-title\">Configuración Vapi</div>\n      <div class=\"form-group\">\n        <label>API Key</label>\n        <input type=\"password\" id=\"api_key\" value=\"484afd71-2703-4852-8580-9629620dde82\">\n      </div>\n      <div class=\"form-group\">\n        <label>Phone Number ID</label>\n        <input type=\"text\" id=\"phone_number_id\" value=\"984fc4c1-d501-47cc-b347-f4fe78085d33\">\n      </div>\n\n      <button type=\"submit\" class=\"btn btn-primary\" id=\"btnLlamar\">\n        <span class=\"spinner\" id=\"spinner\" style=\"display:none\"></span>\n        <span id=\"btnText\">Llamar</span>\n      </button>\n      <button type=\"button\" class=\"btn btn-reset\" id=\"btnReset\">Limpiar</button>\n    </form>\n    <div id=\"result\" class=\"result\"></div>\n  </div>\n</div>\n\n<script>\nconst VAPI_URL = 'https://api.vapi.ai/call';\n\nconst assistantMap = {\n  'cc4bbac0-0736-48f6-8175-0bfe4c4e8a76': 'MODALIDAD EN LINEA',\n  'd61d17dc-6e48-4ce7-bfdb-3dc40dcd329e': 'POSGRADO',\n  '638fb59f-0522-4d76-9ca4-a47609f64961': 'TECNOLÓGICO'\n};\n\nconst form = document.getElementById('vapiForm');\nconst btnLlamar = document.getElementById('btnLlamar');\nconst btnReset = document.getElementById('btnReset');\nconst spinner = document.getElementById('spinner');\nconst resultDiv = document.getElementById('result');\n\nfunction showResult(type, data) {\n  data = data || {};\n  resultDiv.style.display = 'block';\n  resultDiv.className = 'result visible ' + type;\n\n  var isSuccess = type === 'success';\n\n  var iconSvg = isSuccess\n    ? '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"3\" stroke-linecap=\"round\"><polyline points=\"20 6 9 17 4 12\"/></svg>'\n    : '<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"3\" stroke-linecap=\"round\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/></svg>';\n\n  var title = isSuccess ? 'Llamada enviada con exito' : 'Error al enviar la llamada';\n  var msg = data.message || data.error || 'Ocurrio un error inesperado.';\n\n  var html = '';\n  html += '<div class=\"result-head\">';\n  html += '<div class=\"result-icon ' + type + '\">' + iconSvg + '</div>';\n  html += '<div class=\"result-title\">' + title + '</div>';\n  html += '</div>';\n  html += '<div class=\"result-msg\">' + msg + '</div>';\n\n  if (data.callId) {\n    html += '<div class=\"result-meta\"><span><strong>Call ID:</strong> ' + data.callId + '</span></div>';\n  }\n  if (data.status_vapi) {\n    html += '<div class=\"result-meta\"><span><strong>Estado Vapi:</strong> ' + data.status_vapi + '</span></div>';\n  }\n  if (data.status) {\n    html += '<div class=\"result-meta\"><span><strong>HTTP:</strong> ' + data.status + '</span></div>';\n  }\n  if (data.payload_enviado) {\n    html += '<div style=\"font-weight:700;margin:10px 0 4px;color:#1e293b;\">Payload enviado:</div>';\n    html += '<div class=\"result-details\">' + JSON.stringify(data.payload_enviado, null, 2).replace(/</g, '&lt;') + '</div>';\n  }\n  if (data.response) {\n    html += '<div style=\"font-weight:700;margin:10px 0 4px;color:#1e293b;\">Respuesta Vapi:</div>';\n    html += '<div class=\"result-details\">' + JSON.stringify(data.response, null, 2).replace(/</g, '&lt;') + '</div>';\n  }\n\n  resultDiv.innerHTML = html;\n}\n\nfunction hideResult() {\n  resultDiv.className = 'result';\n  resultDiv.style.display = 'none';\n  resultDiv.innerHTML = '';\n}\n\nfunction setLoading(loading) {\n  btnLlamar.disabled = loading;\n  spinner.style.display = loading ? 'inline-block' : 'none';\n  document.getElementById('btnText').textContent = loading ? 'Llamando...' : 'Llamar';\n}\n\nfunction normalizePhone(raw) {\n  let val = String(raw || '').replace(/\\D/g, '');\n  if (val.length >= 9) {\n    if (val.startsWith('0')) val = '+593' + val.substring(1);\n    else if (!val.startsWith('+')) val = '+593' + val;\n  }\n  return val;\n}\n\nform.addEventListener('submit', async (e) => {\n  e.preventDefault();\n  hideResult();\n\n  const assistantId = document.getElementById('assistant').value;\n  const modalidad = document.getElementById('modalidad').value;\n  const nombre_producto = document.getElementById('nombre_producto').value.trim();\n  const primer_nombre = document.getElementById('primer_nombre').value.trim();\n  const nombre_cliente = document.getElementById('nombre_cliente').value.trim();\n  const rawTelefono = document.getElementById('telefono').value.trim();\n  const apiKey = document.getElementById('api_key').value.trim();\n  const phoneNumberId = document.getElementById('phone_number_id').value.trim();\n\n  if (!assistantId) { showResult('error', { message: 'Selecciona un asistente Vapi' }); return; }\n  if (!modalidad) { showResult('error', { message: 'Selecciona una modalidad' }); return; }\n  if (!rawTelefono) { showResult('error', { message: 'Ingresa un numero de telefono' }); return; }\n  if (!apiKey) { showResult('error', { message: 'Ingresa el API Key de Vapi' }); return; }\n  if (!phoneNumberId) { showResult('error', { message: 'Ingresa el Phone Number ID' }); return; }\n\n  const telefono = normalizePhone(rawTelefono);\n  if (telefono.length < 10) { showResult('error', { message: 'El numero de telefono no es valido: ' + rawTelefono }); return; }\n\n  const assistantName = assistantMap[assistantId] || modalidad;\n\n  const callName = ('UTPL ' + modalidad.charAt(0) + modalidad.slice(1).toLowerCase().replace(/ /g,'') + ' ' + (primer_nombre || 'Llamada')).substring(0, 40);\n\n  const payload = {\n    type: 'outboundPhoneCall',\n    name: callName,\n    assistantId: assistantId,\n    phoneNumberId: phoneNumberId,\n    customer: {\n      number: telefono,\n      name: nombre_cliente || primer_nombre\n    },\n    metadata: {\n      modalidad: modalidad,\n      nombre_producto: nombre_producto\n    },\n    assistantOverrides: {\n      variableValues: {\n        sip: '0',\n        nombre: primer_nombre,\n        nombre_cliente: nombre_cliente,\n        nombre_producto: nombre_producto,\n        modalidad: modalidad,\n        modo: 'normal',\n        MODO: 'normal'\n      }\n    }\n  };\n\n  setLoading(true);\n\n  try {\n    const response = await fetch(VAPI_URL, {\n      method: 'POST',\n      headers: {\n        'Authorization': 'Bearer ' + apiKey,\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify(payload)\n    });\n\n    const data = await response.json();\n\n    if (response.ok) {\n      showResult('success', {\n        message: 'Llamada iniciada exitosamente para ' + (nombre_cliente || primer_nombre) + ' al ' + telefono,\n        callId: data.id || data.callId || null,\n        status_vapi: data.status || null,\n        status: response.status,\n        payload_enviado: payload,\n        response: data\n      });\n    } else {\n      const errMsg = data.message || data.error || 'Error desconocido del servidor';\n      showResult('error', {\n        message: errMsg,\n        error: errMsg,\n        status: response.status,\n        payload_enviado: payload,\n        response: data\n      });\n    }\n  } catch (err) {\n    showResult('error', {\n      message: 'No se pudo conectar con Vapi. Error: ' + err.message,\n      error: err.message,\n      payload_enviado: payload\n    });\n  } finally {\n    setLoading(false);\n  }\n});\n\nbtnReset.addEventListener('click', () => {\n  form.reset();\n  hideResult();\n  document.getElementById('nombre_producto').value = 'Marketing';\n  document.getElementById('primer_nombre').value = 'Maria';\n  document.getElementById('nombre_cliente').value = 'Maria Perez Lopez';\n  document.getElementById('telefono').value = '+593991234567';\n});\n</script>\n</body>\n</html>",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "641111d8-a01e-48f6-9fae-93da19fea74a",
+      "name": "Codigo Index",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -20,
+        -40
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Codigo Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Codigo Index": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6fa1c041-c26c-47eb-ae2e-11724704c0ea",
+  "meta": {
+    "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
+  },
+  "id": "oT3W4irzmFt6zixy",
+  "tags": []
+}

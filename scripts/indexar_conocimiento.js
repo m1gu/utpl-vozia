@@ -26,11 +26,13 @@ const CHUNK_OVERLAP = 200; // solapamiento entre chunks
 const BATCH_SIZE = 10;     // cuantos embeddings generar por lote
 const DELAY_MS = 200;      // delay entre lotes (rate limiting)
 
-// Mapeo carpeta → modalidad
-const MODALIDAD_MAP = {
-  'Mel': 'MODALIDAD EN LINEA',
-  'Posgrado': 'POSGRADO',
-  'Tecnologico': 'TECNOLOGICO',
+// Mapeo nombre carpeta → modalidad (case-insensitive, sin tildes)
+const MODALIDAD_ALIASES = {
+  'mel': 'MODALIDAD EN LINEA',
+  'en linea': 'MODALIDAD EN LINEA',
+  'posgrado': 'POSGRADO',
+  'tecnologico': 'TECNOLOGICO',
+  'tecnológico': 'TECNOLOGICO',
 };
 
 // === INICIALIZACION ===
@@ -96,26 +98,45 @@ async function main() {
   }
   console.log('Supabase conectado OK\n');
 
-  // Recolectar archivos
+  // Limpiar tabla antes de re-indexar
+  const { error: delErr } = await supabase.from(TABLE).delete().neq('id', 0);
+  if (delErr) {
+    console.error('Error limpiando tabla:', delErr.message);
+    process.exit(1);
+  }
+  console.log('Tabla utpl_conocimiento limpiada OK\n');
+
+  // Recolectar archivos — escaneo dinámico de BaseConocimiento/
   const files = [];
-  for (const [dirName, modalidad] of Object.entries(MODALIDAD_MAP)) {
-    const dirPath = path.join(BASE_DIR, dirName);
-    if (!fs.existsSync(dirPath)) {
-      console.log(`  [!] Carpeta no encontrada: ${dirPath}`);
-      continue;
+  const dirEntries = fs.readdirSync(BASE_DIR, { withFileTypes: true });
+
+  // Archivos .docx en la raíz → modalidad 'general'
+  const rootDocx = dirEntries.filter(e => e.isFile() && e.name.toLowerCase().endsWith('.docx'));
+  for (const f of rootDocx) {
+    files.push({ path: path.join(BASE_DIR, f.name), modalidad: 'general', fuente: f.name });
+  }
+  if (rootDocx.length > 0) {
+    console.log(`  general (raíz): ${rootDocx.length} archivos`);
+  }
+
+  // Subdirectorios → .docx con modalidad inferida
+  const subdirs = dirEntries.filter(e => e.isDirectory());
+  for (const dir of subdirs) {
+    const dirPath = path.join(BASE_DIR, dir.name);
+    const docxFiles = fs.readdirSync(dirPath).filter(f => f.toLowerCase().endsWith('.docx'));
+    if (docxFiles.length === 0) continue;
+
+    const key = dir.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    let modalidad = MODALIDAD_ALIASES[key];
+    if (!modalidad) {
+      modalidad = dir.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9_ ]/gi, '').trim().toUpperCase() || dir.name.toUpperCase();
+      console.log(`  [!] WARN: carpeta '${dir.name}' sin modalidad mapeada → se usará '${modalidad}'`);
     }
-    const docxFiles = fs.readdirSync(dirPath).filter(f => f.endsWith('.docx'));
+
     for (const f of docxFiles) {
       files.push({ path: path.join(dirPath, f), modalidad, fuente: f });
     }
-    console.log(`  ${dirName}: ${docxFiles.length} archivos`);
-  }
-
-  // Archivo general (FAQ)
-  const generalFile = path.join(BASE_DIR, 'BANCO DE PREGUNTAS Y RESPUESTAS.docx');
-  if (fs.existsSync(generalFile)) {
-    files.push({ path: generalFile, modalidad: 'general', fuente: 'BANCO DE PREGUNTAS Y RESPUESTAS.docx' });
-    console.log(`  general: 1 archivo (FAQ)`);
+    console.log(`  ${dir.name}/ (${modalidad}): ${docxFiles.length} archivos`);
   }
 
   console.log(`\nTotal: ${files.length} archivos a procesar\n`);

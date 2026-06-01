@@ -10,18 +10,24 @@
 │ (origen) │     │ n8nps.plusservices│     │ (base datos) │
 └──────────┘     └────────┬─────────┘     └──────────────┘
                           │
-                    ┌─────┴─────┐
-                    │  Vapi AI  │
-                    │ (llamadas)│
-                    └───────────┘
+                    ┌─────┴─────┐    ┌───────────────┐
+                    │  Vapi AI  │    │  CRM de UTPL  │
+                    │ (llamadas)│    │  (SOAP 1.1)   │
+                    └───────────┘    └───────────────┘
 ```
+
+**Sistema bidirectional:**
+- **IN**: ALTIVA → n8n → Supabase (registro de leads)
+- **OUT**: n8n → CRM de UTPL vía SOAP `RegistrarLLamada` (notificacion de resultado final)
 
 ### 1.2 Ciclo de Vida de un Registro
 
 ```
-1. ALTIVA envia datos ──► ENTRADA_DATOS ──► INSERT/UPDATE utpl_registros (estado_flujo=PENDIENTE)
-2. Schedule (60s) ──► BUSCA Y BLOQUEA ──► POLITICAS 3x3 ──► LLAMAR VAPI
+1. CRM externo envia datos ──► INGRESO_LEAD ──► INSERT/UPDATE utpl_registros (estado_flujo=PENDIENTE)
+2. Schedule (20s) ──► BUSCA Y BLOQUEA ──► POLITICAS 3x3 ──► LLAMAR VAPI
 3. Vapi finaliza llamada ──► webhook CIERRE ──► ACTUALIZA REGISTRO + INSERT utpl_llamadas
+4. Si id_nomenclatura = NIN → keyword match → SOAP XML → ENVIA A CRM UTPL
+5. Si intentos_llamada >= 16 (AGOTADO) → ENVIA A CRM UTPL (NIN - No Localizable)
 ```
 
 ---
@@ -33,11 +39,13 @@
 | Columna | Tipo | Descripcion |
 |---------|------|-------------|
 | `id_negocio` | VARCHAR(100) PK | Identificador unico del negocio/lead |
+| `id_interno_negocio` | TEXT | ID interno del lead en el CRM externo (dealid para SOAP) |
 | `cedula` | VARCHAR(20) | Identificacion del estudiante (texto para preservar ceros) |
 | `nombre` | VARCHAR(255) | Primer nombre |
 | `apellido` | VARCHAR(255) | Apellidos |
 | `producto` | VARCHAR(255) | Nombre de la carrera (ej: "Marketing") |
-| `modalidad` | VARCHAR(50) | MODALIDAD EN LINEA, POSGRADO, TECNOLOGICO |
+| `modalidad` | VARCHAR(50) | MODALIDAD EN LINEA, POSGRADO, TECNOLÓGICO |
+| `nombre_corto_campania` | TEXT | Nombre corto de la campania en Altiva (para notificacion de nodo) |
 | `telefono1` | VARCHAR(20) | Telefono principal |
 | `telefono2` | VARCHAR(20) | Telefono secundario |
 | `telefono3` | VARCHAR(20) | Telefono adicional |
@@ -57,7 +65,7 @@
 **Constraints:**
 - `utpl_registros_pkey`: PRIMARY KEY (id_negocio)
 - `idx_utpl_registros_cedula`: INDEX on cedula
-- `chk_modalidad`: modalidad IN ('MODALIDAD EN LINEA', 'POSGRADO', 'TECNOLOGICO')
+- `chk_modalidad`: modalidad IN ('MODALIDAD EN LINEA', 'POSGRADO', 'TECNOLÓGICO')
 - `chk_estado_flujo`: estado_flujo IN ('PENDIENTE', 'EN_PROCESO', 'REINTENTAR', 'FINALIZADO')
 - `chk_intentos_llamada`: intentos_llamada >= 0 AND <= 16
 - `chk_win_tries`: win_tries >= 0 AND <= 3
@@ -102,58 +110,110 @@
 - `idx_utpl_llamadas_fecha_gestion` ON fecha_gestion
 - `idx_utpl_llamadas_nomenclatura` ON id_nomenclatura
 
+### 2.3 utpl_crm (Auditoria de Envios SOAP al CRM)
+
+Registra cada peticion enviada al web service `RegistrarLLamada` del CRM de UTPL y su respuesta.
+
+| Columna | Tipo | Descripcion |
+|---------|------|-------------|
+| `id` | BIGSERIAL PK | ID autoincremental |
+| `id_negocio` | TEXT NOT NULL | ID del lead |
+| `flujo_origen` | TEXT NOT NULL | 'CierreLlamadas' o 'Llamadas' |
+| `nomenclatura` | TEXT | Nomenclatura de la gestion (NIN, NC) |
+| `dealstage` | TEXT | ID del embudo (1020923926 NIN, 1008735099 NC) |
+| `hs_call_disposition` | TEXT | UUID del sub-motivo CRM |
+| `sales_stage_detail` | TEXT | Nombre del subestado (ej: "NIN - Equivocado") |
+| `agent_name` | TEXT | Nombre del agente (ARIA UTPL) |
+| `hs_call_duration` | TEXT | Duracion en segundos |
+| `hs_call_body` | TEXT | Comentario/resumen de la gestion |
+| `commitment_date` | TEXT | Fecha de compromiso |
+| `dealid` | TEXT | ID interno del negocio (id_interno_negocio) |
+| `hs_timestamp` | TEXT | Fecha y hora de la gestion |
+| `scheduling_date` | TEXT | Fecha de agenda |
+| `soap_xml` | TEXT | XML SOAP completo enviado |
+| `http_code` | TEXT | Codigo HTTP de respuesta (201 = exito) |
+| `id_return` | TEXT | ID retornado por el CRM |
+| `error_messages` | TEXT | Mensajes de error concatenados (messagews1|2|3) |
+| `created_at` | TIMESTAMPTZ DEFAULT NOW() | Fecha de creacion |
+
+**Indices:**
+- `idx_utpl_crm_id_negocio` ON id_negocio
+- `idx_utpl_crm_created_at` ON created_at
+
+### 2.4 utpl_config (Configuracion Global)
+
+Almacena tokens, credenciales y parametros del sistema.
+
+| Columna | Tipo | Descripcion |
+|---------|------|-------------|
+| `key` | TEXT PK | Clave unica |
+| `value` | TEXT | Valor |
+| `expires_at` | TIMESTAMPTZ | Fecha de expiracion (para tokens) |
+| `updated_at` | TIMESTAMPTZ DEFAULT NOW() | Fecha de actualizacion |
+
+**Registros tipicos:**
+| key | value | expires_at |
+|-----|-------|-----------|
+| `altiva_token` | `eyJhbGciOi...` | timestamp de expiracion |
+| `client_id` | `7` | null |
+| `client_secret` | `ug7wMEST...` | null |
+
 ---
 
 ## 3. Flujos n8n - Especificacion Detallada
 
-### 3.1 Flujo: ENTRADA DE DATOS UTPL
+### 3.1 Flujo: INGRESO LEAD
 
-**Archivo:** `ENTRADA_DE_DATOS_UTPL.json`
-**Trigger:** Webhook `POST /utpl-entrada-datos`
+**Archivo:** `UTPL_INGRESO_LEAD.json`
+**Trigger:** Webhook `POST /utpl-ingreso-lead`
 
 #### Estructura:
 ```
-Webhook ALTIVA UTPL
-  └─ PROCESA 1 POR UNO (SplitOut: body.leads)
-       └─ MAPEA CAMPOS UTPL (Code node)
-            └─ GUARDA EN UTPL REGISTROS (Postgres upsert)
+Webhook Ingreso Lead
+  └─ VALIDA API AUTH (IF: x-api-auth header)
+       ├─ OK → NORMALIZA Y MAPEA LEAD (Code node)
+       │        └─ GUARDA LEAD EN UTPL REGISTROS (Postgres upsert)
+       │             └─ RESPUESTA 200 OK
+       └─ FAIL → RESPUESTA 401
 ```
 
-#### Mapping ALTIVA → utpl_registros:
-| ALTIVA Field | DB Column |
-|-------------|-----------|
-| `cedula` | `cedula` |
-| `nombre` | `nombre` |
-| `apellido` | `apellido` |
-| `producto` | `producto` |
-| `modalidad` | `modalidad` (uppercased) |
-| `ph_celular` | `telefono1` |
-| `ph_celular2` | `telefono2` |
-| `ph_residencial` | `telefono3` |
-| `ph_residencial2` | `telefono4` |
-| `ph_comercial` | `telefono5` |
-| `ph_telefono4` | `telefono6` |
+#### Mapping CRM externo → utpl_registros:
+| CRM Field | DB Column |
+|-----------|-----------|
+| `id_negocio` | `id_negocio` |
+| `id_interno_negocio` | `id_interno_negocio` |
+| `id_persona` | `cedula` |
+| `nombres_completos_persona` | `nombre` + `apellido` (split automático) |
+| `nombre_campania` | `modalidad` (derivado por reglas de campaña) |
+| `nombre_corto_campania` | `nombre_corto_campania` |
+| `nombre_producto_interes` | `producto` |
+| `celular_persona` | `telefono1` |
+| `tipo_solicitud` | `tipo_solicitud` (finiquitar → fuerza FINALIZADO) |
+
+#### Auth:
+- Header: `x-api-auth`
+- Token: `utpl-93d6061217323b4ee8c999d670bb506437ffd3d3aa1d3510`
 
 #### Upsert Logic:
-- **Matching column:** `cedula`
-- **INSERT (nuevo):** Todos los campos de datos + operativos via DB defaults
-- **UPDATE (existente):** Solo campos de datos (nombre, apellido, producto, modalidad, telefonos). NO toca estado_flujo ni operativos.
+- **Matching column:** `id_negocio`
+- **INSERT (nuevo):** Campos de datos + `estado_flujo = 'PENDIENTE'`
+- **UPDATE (existente):** Solo campos de datos (nombre, apellido, modalidad, producto, telefono1). NO toca estado_flujo ni operativos.
 
 ### 3.2 Flujo: UTPL Llamadas
 
-**Archivo:** `utpl_Llamadas.json`
-**Trigger:** Schedule Trigger (cada 60 segundos)
+**Archivo:** `Utpl_Llamadas.json`
+**Trigger:** Schedule Trigger (cada 20 segundos)
 
 #### Config (CONFIG INICIAL UTPL):
 ```javascript
 cfg = {
   runtime: { testMode: false, timeOffsetMinutes: 0 },
-  db: { schema: 'public', table: 'utpl_registros', pk: 'cedula' },
+  db: { schema: 'public', table: 'utpl_registros', pk: 'id_negocio' },
   states: { pending: 'PENDIENTE', inProgress: 'EN_PROCESO', retry: 'REINTENTAR', done: 'FINALIZADO' },
   agents: {
     'MODALIDAD EN LINEA': 'cc4bbac0-0736-48f6-8175-0bfe4c4e8a76',
     'POSGRADO': 'd61d17dc-6e48-4ce7-bfdb-3dc40dcd329e',
-    'TECNOLOGICO': '638fb59f-0522-4d76-9ca4-a47609f64961'
+    'TECNOLÓGICO': '638fb59f-0522-4d76-9ca4-a47609f64961'
   },
   vapi: { baseUrl: 'https://api.vapi.ai', apiKey: '484afd71-...', phoneNumberId: '8b04b436-...', sip: '0', campaignId: 'UTPL_LLAMADAS' },
   policy: { TZ: 'America/Guayaquil', CC: '+593', maxLifetimeTries: 16, maxWindowTries: 3, offHoursWait: 30,
@@ -165,29 +225,44 @@ cfg = {
     ],
     phoneFields: ['telefono1', 'telefono2', 'telefono3', 'telefono4', 'telefono5', 'telefono6']
   },
-  noPhoneClassification: { nomenclatura: 'NC', codigo_respuesta: 'NO_CONTACTO', motivo: 'Sin numero de telefono valido' }
+  noPhoneClassification: { nomenclatura: 'NC', codigo_respuesta: 'NO_CONTACTO', motivo: 'Sin numero de telefono valido' },
+  crmUtpl: {
+    triggerNomenclaturas: ['NIN'],
+    wsUrl: 'http://192.168.10.112/WSUtpl/ServiceUtpl.asmx',
+    soapAction: 'http://tempuri.org/RegistrarLLamada',
+    agentName: 'ARIA UTPL',
+    dealstage: { NIN: '1020923926', NC: '1008735099' },
+    defaultDisposition: {
+      agotado: { disposition: 'fa9b4696-95d1-4b4a-906f-4b0b7b7f155b', subEstado: 'NIN - No Localizable' }
+    }
+  }
 }
 ```
 
-#### Nodos (18 nodos):
-1. **EJECUTA ESTO CADA 60 SEG** - Schedule trigger
+#### Nodos (23 nodos):
+1. **EJECUTA ESTO CADA 20 SEG** - Schedule trigger
 2. **CONFIG INICIAL UTPL** - Code node con toda la configuracion
 3. **BUSCA Y BLOQUEA REGISTRO** - PostgreSQL `SELECT ... FOR UPDATE SKIP LOCKED`
-4. **SI SE ENCONTRO REGISTRO** - IF: `$json.cedula exists`
+4. **SI SE ENCONTRO REGISTRO** - IF: `$json.id_negocio exists`
 5. **NORMALIZA DATOS** - Limpia y estandariza campos
 6. **POLITICAS REGLA 3x3** - Aplica regla de ventanas y selecciona asistente
 7. **SI PUEDE LLAMAR** - IF: `$json.puedeLlamar === true`
 8. **PROCESA TELEFONOS** - Formatea a E.164, selecciona por telefono_index
 9. **FORMATEA STATUS** - Set node para cuando no se puede llamar
 10. **GUARDA STATUS** - Upsert estado y fecha_reagenda
-11. **SI QUEDAN NUMEROS** - IF: `$json.isOutOfNumbers === false`
-12. **CAPTURA SNAPSHOT** - Guarda estado previo para fallback
-13. **SIN NUMERO VALIDO** - Marca FINALIZADO si no hay telefonos
-14. **GUARDA PRE-LLAMADA** - Incrementa contadores antes de llamar
-15. **GUARDA REPORTE** - Upsert cuando no hay numero
-16. **LLAMAR VAPI AGENTE** - HTTP POST a Vapi API
-17. **FALLBACK RESTORE** - Restaura snapshot si falla
-18. **NO HACE NADA** - Nodo terminal
+11. **SI FINAL AGOTADO** - IF: `$json.status_sugerido === 'AGOTADO'` → CRM
+12. **PREPARA SOAP XML AGOTADO** - SOAP XML con NIN-No Localizable
+13. **ENVIA A CRM UTPL** - HTTP POST al web service SOAP
+14. **PROCESA RESPUESTA CRM UTPL** - Parse XML response + genera INSERT query
+15. **INSERTA EN CRM UTPL** - Guarda auditoria en tabla utpl_crm
+16. **SI QUEDAN NUMEROS** - IF: `$json.isOutOfNumbers === false`
+17. **CAPTURA SNAPSHOT** - Guarda estado previo para fallback
+18. **SIN NUMERO VALIDO** - Marca FINALIZADO si no hay telefonos
+19. **GUARDA PRE-LLAMADA** - Incrementa contadores antes de llamar
+20. **GUARDA REPORTE** - Upsert cuando no hay numero
+21. **LLAMAR VAPI AGENTE** - HTTP POST a Vapi API
+22. **FALLBACK RESTORE** - Restaura snapshot si falla
+23. **NO HACE NADA** - Nodo terminal
 
 #### Politicas Regla 3x3 - Logica:
 ```
@@ -210,7 +285,7 @@ cfg = {
   "assistantId": "<segun modalidad>",
   "phoneNumberId": "<config>",
   "customer": { "number": "+593...", "name": "..." },
-  "metadata": { "cedula": "...", "modalidad": "...", "producto": "..." },
+  "metadata": { "id_negocio": "...", "cedula": "...", "modalidad": "...", "producto": "...", "nombre_corto_campania": "..." },
   "assistantOverrides": {
     "variableValues": {
       "sip": "0", "cedula": "...", "nombre": "...", "nombre_cliente": "...",
@@ -222,21 +297,48 @@ cfg = {
 
 ### 3.3 Flujo: CIERRE LLAMADAS UTPL
 
-**Archivo:** `utpl_CierreLlamadas.json`
+**Archivo:** `Utpl_CierreLlamadas.json`
 **Trigger:** Webhook `POST /utpl-cierre-vapi` (llamado por Vapi al finalizar llamada)
 
-#### Nodos:
+#### Config (CONFIG INICIAL UTPL):
+```javascript
+cfg = {
+  db: { schema: 'public', table: 'utpl_registros', pk: 'id_negocio' },
+  states: { pending: 'PENDIENTE', inProgress: 'EN_PROCESO', retry: 'REINTENTAR', done: 'FINALIZADO' },
+  retryNomenclaturas: ['NC', 'VLL'],
+  policy: { TZ: 'America/Guayaquil' },
+  phoneFields: ['telefono1', 'telefono2', 'telefono3', 'telefono4', 'telefono5', 'telefono6'],
+  crmUtpl: {
+    triggerNomenclaturas: ['NIN'],
+    wsUrl: 'http://192.168.10.112/WSUtpl/ServiceUtpl.asmx',
+    soapAction: 'http://tempuri.org/RegistrarLLamada',
+    agentName: 'ARIA UTPL',
+    dealstage: { NIN: '1020923926', NC: '1008735099' },
+    defaultDisposition: {
+      agotado: { disposition: 'fa9b4696-95d1-4b4a-906f-4b0b7b7f155b', subEstado: 'NIN - No Localizable' }
+    }
+  }
+}
+```
+
+#### Nodos (32 nodos):
 1. **Webhook Cierre VAPI UTPL** - Recibe `end-of-call-report` de Vapi
-2. **CONFIG INICIAL UTPL** - Config con retryNomenclaturas: ['NC', 'VLL']
+2. **CONFIG INICIAL UTPL** - Config con retryNomenclaturas, crmUtpl, altiva
 3. **NORMALIZA EVENTO CIERRE UTPL** - Extrae campos del payload Vapi
 4. **ES EVENTO CIERRE VALIDO** - Filtra eventos tipo `end-of-call-report`
 5. **EXTRAE STRUCTURED OUTPUTS** - Busca 7 outputs por nombre
 6. **CLASIFICA ESTADO CIERRE** - NC/VLL → REINTENTAR, resto → FINALIZADO
-7. **MAPEA CAMPOS CIERRE UTPL** - Mapea 20 campos para DB
+7. **MAPEA CAMPOS CIERRE UTPL** - Mapea 20+ campos para DB
 8. **GENERAR QUERY ACTUALIZA** - SQL para UPDATE utpl_registros
 9. **ACTUALIZA REGISTRO UTPL** - Ejecuta UPDATE
 10. **INSERTA EN LLAMADAS UTPL** - Upsert en utpl_llamadas
 11. **FALLBACK RESTORE CIERRE** - Rollback si falla
+12. **IGNORAR EVENTO** - Terminal node (no-op)
+13-18. **[CRM branch]** CONDICION ENVIO CRM → MAPEA MOTIVO → PREPARA SOAP → ENVIA CRM → PROCESA RESPUESTA → INSERTA EN CRM
+19-28. **[Altiva branch]** CONDICION ENVIO ALTIVA → LEE TOKEN → DECIDE FLUJO → NECESITA REFRESH → SOLICITA TOKEN → GUARDA TOKEN → JOIN → PREPARA CARGA → ACTUALIZA NODO → PROCESA RESPUESTA
+29-32. **[Audio branch]** CONDICION AUDIO → DESCARGAR AUDIO → PROCESAR AUDIO → SUBIR AUDIO SFTP
+
+La rama CRM (nodos 8-13) corre en paralelo con la actualizacion DB (nodos 14-16). Si falla el CRM, no interrumpe el flujo principal.
 
 #### Structured Outputs (7 total):
 | Output Name | Busqueda (normalizado) | Campo en DB |
@@ -249,11 +351,99 @@ cfg = {
 | `Resumen_Llamada` | `resumenllamada` | `resumen_llamada` |
 | `Cliente_Transferido` | `clientetransferido` | `transferido` |
 
+### 3.4 Flujo: UTPL SIMULADOR (pruebas)
+
+**Archivo:** `UTPL_SIMULADOR.json`
+**Trigger:** Webhook `POST /utpl-simulador`
+
+Flujo auxiliar para probar el sistema sin realizar llamadas reales. Cuando `testMode: true` en Llamadas, las peticiones a Vapi se redirigen aqui.
+
+#### Estructura:
+```
+Webhook Simulador
+  └─ SIMULADOR - Genera Cierre (Code node)
+       │  Hash de id_negocio → asigna nomenclatura deterministica
+       │  NIN (25%): genera resumen con keywords para probar matching
+       │  ACE/IND/NUE/VLL/NC (75%): nomenclaturas variadas sin CRM
+       └─ ENVIAR CIERRE SIMULADO (HTTP POST → /utpl-cierre-vapi)
+```
+
+#### Distribucion de nomenclaturas (por hash % 100):
+| Nomenclatura | % | Accion |
+|-------------|---|--------|
+| ACE | 15% | FINALIZADO sin CRM |
+| IND | 10% | FINALIZADO sin CRM |
+| NUE | 10% | FINALIZADO sin CRM |
+| VLL | 20% | REINTENTAR |
+| NC | 20% | REINTENTAR |
+| NIN | 25% | FINALIZADO + CRM (22 sub-motivos) |
+
 ---
 
-## 4. Nomenclaturas y Motivos
+## 4. CRM UTPL - Notificacion de Resultado
 
-### 4.1 Catalogo Completo
+### 4.1 Web Service SOAP
+
+| Parametro | Valor |
+|-----------|-------|
+| **Endpoint** | `http://192.168.10.112/WSUtpl/ServiceUtpl.asmx` |
+| **Metodo** | POST |
+| **Protocolo** | SOAP 1.1 |
+| **Accion** | `RegistrarLLamada` |
+| **SOAPAction** | `http://tempuri.org/RegistrarLLamada` |
+| **Timeout** | 30s |
+| **Agent** | `ARIA UTPL` |
+
+### 4.2 Payload SOAP (campos enviados)
+
+| Campo SOAP | Origen | Obligatorio |
+|------------|--------|-------------|
+| `codigo_negocio` | `id_negocio` | Si |
+| `dealstage` | `1020923926` (NIN) o `1008735099` (NC) | Si |
+| `hs_call_disposition` | UUID del sub-motivo | Si |
+| `hs_call_body` | `resumen_llamada` (truncado 500 chars) | Opcional |
+| `agent_name` | `ARIA UTPL` (fijo) | Si |
+| `hs_call_duration` | `duracion_llamada` (segundos) | Si |
+| `sales_stage_detail` | Nombre del subestado (ej: "NIN - Equivocado") | Si |
+| `commitment_date` | `fecha_reagenda` | Opcional |
+| `dealid` | `id_interno_negocio` | Si |
+| `hs_timestamp` | `fecha_gestion HH:mm:ss` | Si |
+| `scheduling_date` | - | Opcional |
+
+### 4.3 Disparadores de notificacion
+
+| Escenario | Flujo | Motivo asignado |
+|-----------|-------|-----------------|
+| Vapi retorna NIN | CierreLlamadas | Keyword matching sobre resumen_llamada → sub-motivo NIN |
+| Max intentos agotados (16) | Llamadas | `NIN - No Localizable` (fa9b4696-...) |
+
+### 4.4 Manejo de Respuesta
+
+- **Exito:** `<httpCode>201</httpCode>` + `<idreturn>`
+- **Error:** `<httpCode> != 201` + `<messagews1>`, `<messagews2>`, `<messagews3>`
+- Los errores se loguean pero NO interrumpen el flujo principal
+
+### 4.5 Respuesta SOAP (exitosa)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope ...>
+  <soap:Body>
+    <RegistrarLLamadaResponse xmlns="http://tempuri.org/">
+      <RegistrarLLamadaResult>
+        <httpCode>201</httpCode>
+        <idreturn>uuid-or-id</idreturn>
+      </RegistrarLLamadaResult>
+    </RegistrarLLamadaResponse>
+  </soap:Body>
+</soap:Envelope>
+```
+
+---
+
+## 5. Nomenclaturas y Motivos
+
+### 5.1 Catalogo Completo
 
 | Nomenclatura | Codigo | Motivo |
 |-------------|--------|--------|
@@ -293,14 +483,105 @@ cfg = {
 | NC | NC | No Contacto |
 | NC | NC | Numero incorrecto |
 
-### 4.2 Reglas de Reintento por Nomenclatura
+### 5.2 Reglas de Reintento por Nomenclatura
 - **VLL** (VOLVER A LLAMAR) → `estado_flujo = REINTENTAR`
 - **NC** (NO CONTACTO) → `estado_flujo = REINTENTAR`
 - **Resto** → `estado_flujo = FINALIZADO`
 
+### 5.3 Catalogo CRM Sub-motivos (keyword matching)
+
+Archivo: `Docs/Motivos_CRM_UTPL.csv` (27 registros: 22 NIN + 1 NC + headers)
+
+| Sub-motivo | Keywords | hs_call_disposition UUID |
+|-----------|----------|------------------------|
+| NIN - Equivocado | equivocado, wrong, error numero | ec04d345-b217-43b8-886c-483caaef1207 |
+| NIN - IVR De Empresa | fax, empresa, oficina, centralita | ff2dbd7a-febb-418e-b5f7-a79b21630d4a |
+| NIN - Continuara por si solo | cuenta propia, por su cuenta, centro universitario | 6ec7dafd-36c9-4ac7-8fa4-aaf1d5e655ff |
+| NIN - Titular Esta Fuera Del Pais | fuera del pais, extranjero, viaje | 9bb49857-d693-455f-a719-7da52a3c267f |
+| NIN - Tercero o Familiar Pide No Llamar | no llame, no moleste, tercero, familiar pide | eb503640-7ac4-4296-be4d-19925e5b5c8f |
+| NIN - Neg-Costos-No Tiene Dinero | dinero, costo, caro, pagar, economico | db9d6ca8-d46a-429b-a54c-ea911f60dc1d |
+| NIN - Neg-Pers-Problemas De Salud | salud, enfermo, medico, hospital | b4bac679-2b71-4b0e-bdc3-5ffaac245d4a |
+| NIN - Informacion Para Un Familiar | para un familiar, para mi hijo | 7157a907-42d1-4ba1-a302-bc8c6fe7757d |
+| NIN - Neg-Pers-Aun No Es Bachiller | bachiller, colegio, terminando | 946823bc-a033-47ab-9461-56bbe36ba649 |
+| NIN - Negativa-Pers-Titular Fallecido | fallecio, fallecido, murio | fca8fec9-9636-46e8-b08c-51f95a1861f9 |
+| NIN - Estudiante Utpl 2Do. En Adelante | estudiante continuo, ya estudio | 7b45b4fe-69f6-4b74-b14a-39b16f7df70f |
+| NIN - Negativa-Pers-Trabaja En La Utpl | trabaja en utpl, empleado utpl | ed5610f2-00e8-4284-b62e-0becd4b25e9a |
+| NIN - Interesado En Maestria | maestria, posgrado, postgrado | 2efa7cc1-9785-401b-b13e-b133c42ae62e |
+| NIN - No Ha Solicitado Informacion | no solicite, no pedi informacion | 491f0fd2-b01e-43fa-b0e7-8e4a59e1abb9 |
+| NIN - Mala Experiencia Con Utpl | mala experiencia, mal servicio, queja | 2ba903ac-d1f4-43f3-89c9-1adc67b373c0 |
+| NIN - No Tiene Tiempo Para Estudiar | no tengo tiempo, ocupado, falta de tiempo | 5fadfbe1-909d-44e1-84d7-63a8a184cc7f |
+| NIN - No Esta Interesado En Modalidad En Linea | presencial, no en linea | 6ab24c69-4728-48d2-8950-36d6fd47627d |
+| NIN - Estudia Ahora En Otra Univ | otra universidad, ya estudio en | 7b7283a7-dd21-4601-962d-7f867f0dcb3a |
+| NIN - Carreras Ofertadas No Desea | no ofertan, no tiene la carrera | f6828cdb-b9c4-4e4b-a3f0-cc8e372c232f |
+| NIN - Interesado Cursos Form. Perm | cursos, taller, formacion permanente | ee5da155-3a0f-41fd-82e5-72a99d3f19d9 |
+| NIN - Interesado Proximo periodo | proximo periodo, siguiente ciclo | c941a32d-0909-46f4-a72b-ca94adbde489 |
+| NIN - No Localizable | no localizable, no contesta | fa9b4696-95d1-4b4a-906f-4b0b7b7f155b |
+| NC - No Contacto | (buzon de voz) | 569d4307-4da7-45e0-9c5a-7530a99aca5d |
+
+**Default (sin match):** `NIN - No Desea Continuar Con Proceso Matricula` (f6cf9978-e0e0-4cd9-9605-3e4baca78289)
+
 ---
 
-## 5. Configuracion Vapi
+## 5. Altiva - Actualizacion de Nodo
+
+### 5.1 API Endpoints
+
+| Parametro | Valor |
+|-----------|-------|
+| **Auth URL** | `http://192.168.10.238:91/api/auth/token` |
+| **Actualizar Nodo** | `http://192.168.10.238:91/api/v1/altiva/nodo/actualizar` |
+| **Auth method** | JWT Bearer (24h expiry) |
+| **client_id** | `7` |
+| **client_secret** | `ug7wMESTpOPPmdDC3KoEyYpVXskcOqRWnfHFZm8X` |
+
+### 5.2 Token Storage
+Cacheado en `utpl_config` table (key: `altiva_token`). Se renueva automáticamente cuando expira.
+
+### 5.3 Payload (Actualizar Nodo)
+
+| Campo | Origen | Descripcion |
+|-------|--------|-------------|
+| `nuic` | `cedula` del lead | Cédula del usuario |
+| `nombre_corto_campania` | `nombre_corto_campania` del registro (fallback: cfg.altiva.nombreCampania) | Nombre corto de campaña |
+| `nodo` | Según nomenclatura | `1` = no interesado/agotado, `2` = interesado |
+
+### 5.4 Disparadores
+
+| Escenario | Flujo | nodo |
+|-----------|-------|------|
+| Vapi retorna NIN | CierreLlamadas | `1` |
+| Vapi retorna ACE, IND, NUE | CierreLlamadas | `2` |
+| Max intentos agotados | Llamadas | `1` |
+
+---
+
+## 6. SFTP Audio Download
+
+### 6.1 Flujo
+```
+INSERTA EN CRM UTPL
+  └── CONDICION AUDIO (IF: link_audio_vapi not empty)
+        └── DESCARGAR AUDIO (HTTP GET, binary, timeout 300s)
+              └── PROCESAR AUDIO (Code: detect ext from URL)
+                    └── SUBIR AUDIO SFTP (FTP upload, protocol sftp)
+```
+
+### 6.2 Path SFTP
+```
+/UTPL/llamadas/YYYYMMDD/{id_llamada}.{ext}
+```
+Ejemplo: `/UTPL/llamadas/20260529/sim-abc123.mp3`
+
+### 6.3 Credencial
+`SFTP account` (ID: `vEofEOfYOxdhgSvj`), misma que usa el proyecto Solidario.
+
+### 6.4 Manejo de Errores
+- Sin audio: salta la rama
+- Error de descarga o SFTP: log, no interrumpe flujo
+
+---
+
+## 7. Configuracion Vapi
 
 ### 5.1 Endpoints
 - **Base URL:** `https://api.vapi.ai`
@@ -312,7 +593,7 @@ cfg = {
 |----|--------|-----------|
 | `cc4bbac0-0736-48f6-8175-0bfe4c4e8a76` | utpl mel | MODALIDAD EN LINEA |
 | `d61d17dc-6e48-4ce7-bfdb-3dc40dcd329e` | utpl posgrado | POSGRADO |
-| `638fb59f-0522-4d76-9ca4-a47609f64961` | utpl tecnologico | TECNOLOGICO |
+| `638fb59f-0522-4d76-9ca4-a47609f64961` | utpl tecnologico | TECNOLÓGICO |
 
 ### 5.3 Phone Numbers
 | ID | Uso |
@@ -346,9 +627,22 @@ sip, cedula, nombre, nombre_cliente, producto, modalidad, modo, MODO
 - **Formatos soportados:** `.xlsx`, `.csv`, `.txt` (tab-delimited)
 - **Dry-run mode:** Disponible
 
----
+### 6.4 scripts/cargar_datos_prueba.js
+- **Proposito:** Generar SQL con 100 leads sinteticos para pruebas
+- **Ejecucion:** `node scripts/cargar_datos_prueba.js`
+- **Salida:** `pruebas/leads_prueba.sql` (ejecutar en Supabase SQL Editor)
+- **Escenarios cubiertos:** Fresh, mid-cycle, window limit, near max, agotados, sin telefonos, sin id_interno
 
-## 7. Credenciales
+### 6.5 scripts/validar_sql.js
+- **Proposito:** Validar constraints del SQL generado (telefono_index, win_tries, intentos)
+- **Ejecucion:** `node scripts/validar_sql.js`
+
+### 6.6 flujo_n8n/UTPL_SIMULADOR.json
+- **Proposito:** Prueba end-to-end sin llamadas reales
+- **Activacion:** Importar en n8n, activar, y poner `testMode: true` en Llamadas
+- **Funcionamiento:** Recibe payload de llamada, genera cierre sintetico variado, reenvia a CierreLlamadas
+
+---
 
 | Recurso | ID / Key | Notas |
 |---------|----------|-------|
@@ -422,7 +716,7 @@ BaseConocimiento/
 | Columna | Tipo | Descripcion |
 |---------|------|-------------|
 | `id` | BIGSERIAL PK | |
-| `modalidad` | VARCHAR(50) | MODALIDAD EN LINEA, POSGRADO, TECNOLOGICO, general |
+| `modalidad` | VARCHAR(50) | MODALIDAD EN LINEA, POSGRADO, TECNOLÓGICO, general |
 | `fuente` | VARCHAR(255) | Nombre del archivo .docx |
 | `titulo` | VARCHAR(500) | Titulo del chunk |
 | `contenido` | TEXT | Texto del chunk |
