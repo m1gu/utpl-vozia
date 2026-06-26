@@ -1,0 +1,182 @@
+Posibles valores que pueden llegar en el campo "nombre_producto_interes"  :
+
+Tecnologías de la Información
+Creación Audiovisual Digital
+Contabilidad y Asesoría Tributaria
+Educación mención en Innovación y Liderazgo Educativo
+Modelado BIM para la industria de la construcción
+Psicopedagogía
+Ciencias Política y Relaciones Internacionales
+Seguridad y Salud Ocupacional
+NEGOCIOS TURISTIC Y GASTRONOMI
+Marketing Turístico y Digital
+Especialización en Sistemas de Información con mención en Blockchain y Arquitectura en la Nube
+Negociación y Ventas
+Medicina Familiar y Comunitaria
+Administración de Empresas
+Derecho
+Inteligencia Artificial Aplicada
+Contabilidad y Auditoría
+Educación Básica
+Agronegocios
+Finanzas
+Educación Inicial
+M. EDUC INNOVACION Y LIDERAZGO
+INGENIERIA EN ENERGIA
+Economía
+Criminología y Política Criminal
+Psicología
+Bioquímica y Farmacia
+Medicina
+Gestión Ambiental
+Redes y Analítica de Datos
+Enfermería
+Planificación del Territorio
+Pedagogía de la Lengua y la Literatura
+Comunicación Estratégica y Marketing Digital
+Gestión Empresarial
+Ingeniería Civil con mención en Alcantarillado
+Logística y Transporte
+Recursos Naturales Renovables
+Turismo
+Nutrición y Dietética
+Pedagogía de las Matemáticas y la Física
+Especialización en Ingeniería Civil con mención en Alcantarillados y Saneamiento
+Patrimonio Paleontológico
+Análisis Biológico y Diagnóstico de Laboratorio
+Comunicación
+Pedagogía de los Idiomas Nacionales y Extranjeros
+Pedagogía en Ciencias Sociales y Humanidades
+Ciencias Ambientales con Mención en Educación Ambiental
+Administración de Empresas con mención en Transformación Digital
+ING RECUR NATURALES Y SOSTENIB
+Educación con Mención en Currículo y Evaluación Educativa
+Auditoría mención en Gestión del Riesgo de Fraude Financiero y Análisis Forense
+Comunicación, Ideación y Creación de Contenidos con Inteligencia Artificial
+Gestión del Talento Humano
+GovTech y Administración Pública
+Ingeniería Civil con mención en Vías
+Pedagogía de la Química y la Biología
+ING EN RIESGOS Y CAMBIO CLIMAT
+Gestión de Proyectos
+Ciencias Políticas
+Educación mención Gestión del Aprendizaje mediado por TIC
+Producción y Operación Industrial
+Educación mención Orientación Familiar
+M. EN EDUC CON MENC EN OR EDUC
+Educación mención Orientación Educativa
+Industria 4.0
+Administración de Empresas mención en Innovación
+Tributacion
+M. EDUC MENC GESTION DE APREND
+Marketing
+Gestión de Riesgos y Desastres
+Optimización y Dirección Logística
+Gestión de Geoinfomación
+M. EN EDUC CON MENC EN OR FAMI
+Especialización en Geotecnia
+Análisis y Gestión de Datos para la Economía y la Empresa
+Gestión Financiera y Administración de Riesgos Financieros
+Gerencia de Instituciones de Salud
+Maestría En Literatura Infantil y Juvenil
+Dirección Financiera
+Derecho mención Derecho Procesal Penal
+Educación con mención en Inclusión Educativa y Atención a la Diversidad
+E. EN ANEST,REANIMAC Y TERAPIA
+Ingeniería Civil
+Gestión de la Calidad y Auditoría en Salud
+Comunicación Estratégica
+Administración de Empresass
+Administración Pública
+Asistencia Gerencial y Relaciones Públicas
+Administración Tributaria
+Desarrollo Local
+Cooperación Internacional para el desarrollo Sostenible
+Seguridad Industrial
+Alimentos
+Derecho Constitucional
+Derecho mención Derecho Procesal
+Pedagogía en las Artes
+Arquitectura
+Religión
+Técnicas constructivas para Edificaciones Sostenibles
+Gestión de Sistemas Energéticos en Edificaciones
+Ciencias y Tecnologías de la Computación
+Negocios Digitales mención en Innovación y Gestión de Empresas Digitales
+Transformación Digital De Empresas
+Computación
+NEGOCIOS TURÍSTICOS Y GASTRONÓMICOS
+ESPECIALIZACION EN IMAGENOLOGI
+M.ADMI DE EMPR CON MEN EN INNO
+Educación mención Enseñanza de la Matemática
+Tecnología de la Información
+Derecho Tributario
+MBA con mención en Innovación - en línea
+Gestión e Innovación de Alimentos y Bebidas
+Investigación en Educación
+Gastronomía
+Psicología Clínica
+Tecnología Superior en Modelado BIM para la Industria de la Construcción
+Gestión Integrada de Recursos Hídricos
+Pedagogía de Las Ciencias Experimentales
+Fisioterapia
+Pedagogía de las Artes
+DIP PARA EDUC RELIGIOSA ESCOL
+DIPL POLITICA Y LEGIS AMB
+SEGURIDAD ALMACEN Y EXP
+Maestría en Marketing con mención en Transformación Digital
+Auto LI CMD6
+Auto LI DED6
+Auto LI NRE6
+Auto LI SED6
+Auto LI MIM6
+Auto LI TUD6
+Auto LI EID6
+Auto LI RDE6
+Ingeniería Química
+Geología
+Telecomunicaciones
+Ingeniería Industrial
+Agropecuaria
+Artes Visuales
+Ingeniería Ambiental
+Derecho Procesal Administrativo
+ESPECIALIZACIÓN ENSISTEMAS DE INFORMACIÓN CONMENCIÓN EN BLOCKCHAIN YARQUITECTURA EN LA NUBE
+Educación mención 1. Orientación Familiar, mención 2. Orientación Educativa
+Especialidazción en Ingeniera Civil con mención en alcantarillados y saneamiento
+Maestría en Análisis y Gestión de Datos para la Economía y la Empresa
+TENOLOGÍAS DE LA INFORMACIÓN
+Licencia Operador Tipo G
+Especialización en Optimización y Dirección Logística
+Ciencias Químicas
+TECN EN COMU ESTRAT Y MARK DIG (TCD7)
+PED. DE IDIOMAS NAC Y EXT
+SEG MANIPULACION QUIMICA
+Certificación de Mediadores
+Biología
+Artes Escénicas
+TECN SUP EN CONT Y ASES TRIBUT
+Ciencias Políticas con mención en Políticas Públicas
+ING LOGISTICA Y TRANSPORTE
+Doctorado en Química
+DIPLOMADO EN PASTORAL FAMILIAR
+DIPL ACOMP ESP EN PALIATIVOS E
+DIP PASTORAL FAMILIAR PAREJAS
+Diplomado en Arte y Ciencia del Acompañamiento Espiritual en Cuidados Paliativos
+Bioeconomía
+Farmacia Asistencial y Atención Farmacéutica con mención en Medicamentos
+Diplomado en Pastoral Familiar: formación, acompañamiento y misión evangelizadora de la familia
+M. EN SEGURIDAD INDUSTRIAL
+NEGOCIOS INTERNACIONALES
+M.ENSEÑANZA DE MATEMATICAS
+M. DERECHO PROCESAL PENAL
+IA PARA PROFESIONALES
+Diplomado Liderazgo Politico
+TECNICO CARTOGRAFIA DRONES
+MANEJO INTEGRAL HTA
+DIPLOMADO DERECHO NOTARIAL
+DIPL SOSTENIBILIDAD EMP
+M.DERECHO MENC DERE PROCESAL
+Maetría en Derecho con mención en Derecho Procesal
+derecho, mención derecho procesal
+M.PEDAGOGIA IDIO ENSEÑ INGLES

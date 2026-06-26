@@ -1,0 +1,2 @@
+cedula,nombre,apellido,producto,modalidad,telefono1,telefono2,telefono3,telefono4,telefono5,telefono6,estado_flujo,intentos_llamada,telefono_index,fecha_reagenda,win_stamp,win_tries,fecha_ultima_llamada,created_at,updated_at,id_negocio,campaign_slug,motive_counters,id_interno_negocio,nombre_corto_campania
+0922412770,María,Fonseca,Administración de Empresas,POSGRADO,0995390486,,,,,,EN_PROCESO,0,0,,,0,,2026-06-10 12:04:09.891087-05,2026-06-14 10:20:00.579419-05,0922412770.AED6.202898,,{},34739917403,utpl_integracion

@@ -5,16 +5,15 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "utpl-cierre-vapi",
-        "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -46940,
-        9080
+        -9340,
+        3520
       ],
-      "id": "8a5a5362-0a20-413d-b9b4-3c6589de0e8a",
+      "id": "53e67dfb-ad2f-475e-8c8d-a3d798c83bb6",
       "name": "Webhook Cierre VAPI UTPL",
       "webhookId": "utpl-cierre-vapi-001"
     },
@@ -25,10 +24,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -46320,
-        9160
+        -9100,
+        3520
       ],
-      "id": "24a5509a-df59-4cbc-b514-d2d161d47130",
+      "id": "02f53b00-9113-4f87-86c3-cfc3ef370d97",
       "name": "CONFIG INICIAL UTPL"
     },
     {
@@ -38,10 +37,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -46040,
-        9160
+        -8860,
+        3520
       ],
-      "id": "062ebf8d-0015-493a-bd80-5d0f1d8bf98f",
+      "id": "6c1e7247-ebc4-4c46-bc46-1aec3f86cea0",
       "name": "NORMALIZA EVENTO CIERRE UTPL"
     },
     {
@@ -91,36 +90,36 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -45780,
-        9160
+        -8600,
+        3520
       ],
-      "id": "c1bed0b3-f588-4bd7-87f6-b2833eac7904",
+      "id": "a2636c44-bb64-40ea-91c0-5fdb265f9dfc",
       "name": "ES EVENTO CIERRE VALIDO"
     },
     {
       "parameters": {
-        "jsCode": "return items.map(item => {\n  const root = item.json || {};\n  const structuredOutputs = root.structuredOutputs || {};\n  let out = {\n    es_familiar: null,\n    contactoalo: null,\n    contactoefectivo: null,\n    sentimiento: null,\n    resumen_llamada: root.summary || null,\n    interes_llamada_ejecutivo: null\n  };\n\n  const tryParse = (val) => {\n    if (!val) return val;\n    if (typeof val === 'object' && !Array.isArray(val)) return val;\n    if (typeof val === 'string' && (val.trim().startsWith('{') || val.trim().startsWith('['))) {\n      try { return JSON.parse(val); } catch (e) {}\n    }\n    return val;\n  };\n\n  const normalize = (name) => String(name || '').toLowerCase().replace(/[\\s_]+/g, '');\n\n  for (const [uuid, output] of Object.entries(structuredOutputs)) {\n    const name = normalize(output.name);\n    const result = tryParse(output.result);\n\n    if (name === 'sentimientocliente') {\n      out.sentimiento = typeof result === 'string' ? result : null;\n    }\n    if (name === 'esfamiliar') {\n      out.es_familiar = typeof result === 'string' ? result : null;\n    }\n    if (name === 'contactoalo') {\n      out.contactoalo = typeof result === 'string' ? result : null;\n    }\n    if (name === 'contactoefectivo') {\n      out.contactoefectivo = typeof result === 'string' ? result : null;\n    }\n    if (name === 'resumenllamada') {\n      out.resumen_llamada = typeof result === 'string' ? result : (result?.resumen || out.resumen_llamada);\n    }\n    if (name === 'interescontactoejecutivo') {\n      out.interes_llamada_ejecutivo = typeof result === 'string' ? result : null;\n    }\n  }\n\n  if (!out.interes_llamada_ejecutivo) {\n    out.interes_llamada_ejecutivo = 'NO_APLICA';\n  }\n\n  for (const [k, v] of Object.entries(out)) {\n    if (v !== undefined) item.json[k] = v;\n  }\n\n  return item;\n});\n"
+        "jsCode": "return items.map(item => {\n  const root = item.json || {};\n  const structuredOutputs = root.structuredOutputs || {};\n  let out = {\n    nomenclatura: null,\n    motivo: null,\n    es_familiar: null,\n    contactoalo: null,\n    contactoefectivo: null,\n    sentimiento: null,\n    resumen_llamada: root.summary || null,\n    interes_llamada_ejecutivo: null\n  };\n\n  const tryParse = (val) => {\n    if (!val) return val;\n    if (typeof val === 'object' && !Array.isArray(val)) return val;\n    if (typeof val === 'string' && (val.trim().startsWith('{') || val.trim().startsWith('['))) {\n      try { return JSON.parse(val); } catch (e) {}\n    }\n    return val;\n  };\n\n  const normalize = (name) => String(name || '').toLowerCase().replace(/[\\s_]+/g, '');\n\n  for (const [uuid, output] of Object.entries(structuredOutputs)) {\n    const name = normalize(output.name);\n    const result = tryParse(output.result);\n\n    if (name === 'estadogestionutpl' && typeof result === 'object') {\n      out.nomenclatura = result.id_nomenclatura || result.nomenclatura || out.nomenclatura;\n      out.motivo = result.id_motivo || result.motivo || out.motivo;\n    }\n    if (name === 'sentimientocliente') {\n      out.sentimiento = typeof result === 'string' ? result : null;\n    }\n    if (name === 'esfamiliar') {\n      out.es_familiar = typeof result === 'string' ? result : null;\n    }\n    if (name === 'contactoalo') {\n      out.contactoalo = typeof result === 'string' ? result : null;\n    }\n    if (name === 'contactoefectivo') {\n      out.contactoefectivo = typeof result === 'string' ? result : null;\n    }\n    if (name === 'resumenllamada') {\n      out.resumen_llamada = typeof result === 'string' ? result : (result?.resumen || out.resumen_llamada);\n    }\n    if (name === 'interescontactoejecutivo') {\n      out.interes_llamada_ejecutivo = typeof result === 'string' ? result : null;\n    }\n  }\n\n  if (!out.interes_llamada_ejecutivo) {\n    out.interes_llamada_ejecutivo = 'NO_APLICA';\n  }\n\n  for (const [k, v] of Object.entries(out)) {\n    if (v !== undefined) item.json[k] = v;\n  }\n\n  return item;\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -45560,
-        8920
+        -8300,
+        3320
       ],
-      "id": "f11c2c75-75c0-44e0-85d6-2950affd6c0e",
+      "id": "bc016aee-5272-4e9b-9167-e903fdf65696",
       "name": "EXTRAE STRUCTURED OUTPUTS"
     },
     {
       "parameters": {
-        "jsCode": "return items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const endedReason = String(item.json.endedReason || '').toLowerCase();\n  const structuredOutputs = item.json.structuredOutputs || {};\n  const estadoGestionOutput = structuredOutputs['3723ad72-ac27-43ac-8a6f-8edaf18d28f6'];\n\n  let nomenclatura, motivo, idNomenclatura, estadoFlujo, statusSugerido, fechaReagenda;\n\n  // 1. Extraer nomenclatura y motivo desde structured outputs\n  if (estadoGestionOutput && typeof estadoGestionOutput.result === 'string') {\n    const full = estadoGestionOutput.result.trim();\n    const slashIdx = full.indexOf('/');\n    if (slashIdx >= 0) {\n      nomenclatura = full.substring(0, slashIdx).trim();\n      motivo = full.substring(slashIdx + 1).trim();\n      const codeMatch = motivo.match(/\\b(NUE|ACE|IND|VLL|NIN|NC)\\b/i);\n      idNomenclatura = codeMatch ? codeMatch[1].toUpperCase() : null;\n    } else {\n      nomenclatura = 'NO CONTACTO';\n      motivo = 'NC - No Contacto';\n      idNomenclatura = 'NC';\n    }\n  } else {\n    nomenclatura = 'NO CONTACTO';\n    motivo = 'NC - No Contacto';\n    idNomenclatura = 'NC';\n  }\n\n  // 2. Clasificar estado\n  const retryNoms = cfg.retryNomenclaturas || ['NC', 'VLL'];\n  const noContactReasons = ['voicemail', 'no-answer', 'busy', 'failed', 'error', 'timeout', 'declined', 'wrong-number', 'providerfault', 'service-unavailable', '503', '500', '408', '486', '480', 'silence-timed-out'];\n\n  if (noContactReasons.some(r => endedReason.includes(r))) {\n    nomenclatura = 'NO CONTACTO';\n    motivo = 'NC - No Contacto';\n    idNomenclatura = 'NC';\n    statusSugerido = 'REINTENTAR';\n    estadoFlujo = cfg.states.retry;\n    const cooldown = \n      endedReason.includes('wrong-number') ? 60 :\n      endedReason.includes('voicemail') || endedReason.includes('silence') ? 30 :\n      endedReason.includes('busy') || endedReason.includes('declined') || endedReason.includes('no-answer') ? 15 : 10;\n    fechaReagenda = new Date(Date.now() + cooldown * 60000).toISOString();\n  } else if (retryNoms.includes(idNomenclatura)) {\n    statusSugerido = 'REINTENTAR';\n    estadoFlujo = cfg.states.retry;\n    fechaReagenda = new Date(Date.now() + 15 * 60000).toISOString();\n  } else if (!idNomenclatura && (Number(item.json.cost) === 0 || !item.json.endedAt)) {\n    nomenclatura = 'NO CONTACTO';\n    motivo = 'NC - No Contacto';\n    idNomenclatura = 'NC';\n    statusSugerido = 'REINTENTAR';\n    estadoFlujo = cfg.states.retry;\n    fechaReagenda = new Date(Date.now() + 10 * 60000).toISOString();\n  } else {\n    statusSugerido = 'FINAL';\n    estadoFlujo = cfg.states.done;\n    fechaReagenda = null;\n  }\n\n  // 3. Asignar valores al item\n  item.json.nomenclatura = nomenclatura;\n  item.json.motivo = motivo;\n  item.json.id_nomenclatura = idNomenclatura || null;\n  item.json.estado_flujo = estadoFlujo;\n  item.json.status_sugerido = statusSugerido;\n  item.json.fecha_reagenda = fechaReagenda;\n\n  // 4. Generar query SQL\n  const raw = String(item.json.id_negocio ?? '').trim();\n  if (!raw) {\n    item.json.query = `SELECT 'skip_no_id_negocio' AS status`;\n  } else {\n    const idNegocio = raw.replace(/'/g, \"''\");\n    const estado = String(estadoFlujo).replace(/'/g, \"''\");\n    const freag = fechaReagenda ? `'${String(fechaReagenda).replace(/'/g, \"''\")}'::timestamptz` : 'NULL';\n    item.json.query = `\n    UPDATE ${cfg.db.schema}.${cfg.db.table}\n    SET estado_flujo = '${estado}',\n        fecha_reagenda = ${freag},\n        updated_at = now()\n    WHERE id_negocio = '${idNegocio}'\n    RETURNING *;\n  `;\n  }\n\n  return item;\n});\n"
+        "jsCode": "return items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const nom = String(item.json.nomenclatura || '').trim().toUpperCase();\n  const retryNoms = cfg.retryNomenclaturas || ['NC', 'VLL'];\n\n  if (retryNoms.includes(nom)) {\n    item.json.status_sugerido = 'REINTENTAR';\n    item.json.estado_flujo = cfg.states.retry;\n  } else {\n    item.json.status_sugerido = 'FINAL';\n    item.json.estado_flujo = cfg.states.done;\n  }\n\n  return item;\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -45320,
-        8880
+        -8060,
+        3320
       ],
-      "id": "80ba9966-9f16-4e74-b898-6ad9b0b9e02c",
+      "id": "4f1fc3de-aebf-484d-9dd3-bf0b8b745b08",
       "name": "CLASIFICA ESTADO CIERRE"
     },
     {
@@ -137,12 +136,6 @@
               "id": "map-cedula",
               "name": "cedula",
               "value": "={{ $json.cedula || $json.metadata?.cedula || null }}",
-              "type": "string"
-            },
-            {
-              "id": "map-id-interno-negocio",
-              "name": "id_interno_negocio",
-              "value": "={{ $json.id_interno_negocio || $json.metadata?.id_interno_negocio || null }}",
               "type": "string"
             },
             {
@@ -166,7 +159,7 @@
             {
               "id": "map-nomenclatura",
               "name": "id_nomenclatura",
-              "value": "={{ $json.id_nomenclatura || $json.nomenclatura || $json.codigo_respuesta || null }}",
+              "value": "={{ $json.nomenclatura || $json.codigo_respuesta || null }}",
               "type": "string"
             },
             {
@@ -285,10 +278,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -45100,
-        8920
+        -7840,
+        3320
       ],
-      "id": "6c6c5012-3d53-4f09-b35c-5386c6094cda",
+      "id": "aab37a40-8ddd-4529-bfaa-5b98cac1c823",
       "name": "MAPEA CAMPOS CIERRE UTPL"
     },
     {
@@ -298,10 +291,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -44820,
-        8920
+        -7560,
+        3320
       ],
-      "id": "144b44f1-2374-4e33-b886-4bc4c4fd4d45",
+      "id": "8c6a4a54-ffb8-475a-b7fb-cc476413eebc",
       "name": "GENERAR QUERY ACTUALIZA"
     },
     {
@@ -313,10 +306,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -44580,
-        8760
+        -7320,
+        3160
       ],
-      "id": "162ba44e-a18f-428d-be3b-d4020bef5ee2",
+      "id": "134db2d0-abfb-4b04-b3e2-bf6327b8a452",
       "name": "ACTUALIZA REGISTRO UTPL",
       "credentials": {
         "postgres": {
@@ -574,10 +567,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -44260,
-        9000
+        -7000,
+        3400
       ],
-      "id": "7609be60-2656-458b-81c4-efa71f68b0be",
+      "id": "655fc825-28c1-4be7-8902-935fab30f99a",
       "name": "INSERTA EN LLAMADAS UTPL",
       "retryOnFail": true,
       "maxTries": 3,
@@ -598,10 +591,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -43940,
-        9020
+        -6680,
+        3420
       ],
-      "id": "b980e90d-ddf8-47d0-84db-f8bcf0b827ff",
+      "id": "a4d6a47d-b2a2-4b76-adb3-01704bf42d11",
       "name": "FALLBACK RESTORE CIERRE",
       "credentials": {
         "postgres": {
@@ -613,13 +606,13 @@
     },
     {
       "parameters": {},
-      "id": "45c3c0f4-4a9d-44fc-b660-768a2294a5e6",
+      "id": "1eff7ab2-a630-4beb-9f30-cabca43c3072",
       "name": "IGNORAR EVENTO",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -44440,
-        9600
+        -7180,
+        4000
       ]
     },
     {
@@ -640,41 +633,32 @@
                 "type": "string",
                 "operation": "equals"
               }
-            },
-            {
-              "id": "crm_interes_no",
-              "leftValue": "={{ String($json.interes_llamada_ejecutivo || '').toLowerCase().trim() }}",
-              "rightValue": "no",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
             }
           ],
-          "combinator": "or"
+          "combinator": "and"
         },
         "options": {}
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -44800,
-        9260
+        -7540,
+        3660
       ],
-      "id": "b7b0bb98-dcb0-4403-abe7-d4aa8abc3229",
+      "id": "0b7ffb61-8a95-4fb0-ba88-c0f53192241f",
       "name": "CONDICION ENVIO CRM UTPL"
     },
     {
       "parameters": {
-        "jsCode": "const motivosNIN = [\n  { keys: 'equivocado,wrong,error numero,no es,no lo conozco', id: 'ec04d345-b217-43b8-886c-483caaef1207', name: 'NIN - Equivocado' },\n  { keys: 'fax,empresa,oficina,centralita,ivr', id: 'ff2dbd7a-febb-418e-b5f7-a79b21630d4a', name: 'NIN - IVR De Empresa' },\n  { keys: 'cuenta propia,por su cuenta,solo,centro universitario,yo mismo', id: '6ec7dafd-36c9-4ac7-8fa4-aaf1d5e655ff', name: 'NIN - Continuara Por Si Solo' },\n  { keys: 'fuera del pais,extranjero,viaje,viajara,se va', id: '9bb49857-d693-455f-a719-7da52a3c267f', name: 'NIN - Titular Esta Fuera Del Pais' },\n  { keys: 'para un familiar,para mi hijo,para mi hermano,informacion para,no es para mi', id: '7157a907-42d1-4ba1-a302-bc8c6fe7757d', name: 'NIN - Informacion Para Un Familiar' },\n  { keys: 'no solicite,no pedi informacion,no he solicitado,nunca pedi', id: '491f0fd2-b01e-43fa-b0e7-8e4a59e1abb9', name: 'NIN - Indica Que No Ha Solicitado Informacion' },\n  { keys: 'maestria,posgrado,postgrado', id: '2efa7cc1-9785-401b-b13e-b133c42ae62e', name: 'NIN - Neg-Academicos-Interesado En Maestria' },\n  { keys: 'cursos,taller,formacion permanente,seminario', id: 'ee5da155-3a0f-41fd-82e5-72a99d3f19d9', name: 'NIN - Neg-Academicos-Interesado Cursos Form. Perm' },\n  { keys: 'otra universidad,ya estudio en,estoy en otra,me matricule en otra', id: '7b7283a7-dd21-4601-962d-7f867f0dcb3a', name: 'NIN - Neg-Academicos-Estudia Ahora En Otra Univ' },\n  { keys: 'no ofertan,no tiene la carrera,carrera que quiero,no esta la carrera', id: 'f6828cdb-b9c4-4e4b-a3f0-cc8e372c232f', name: 'NIN - Neg-Academicos-Carreras Ofertadas No Desea' },\n  { keys: 'mala experiencia,mal servicio,queja,mal trato,no me ayudaron,mala atencion', id: '2ba903ac-d1f4-43f3-89c9-1adc67b373c0', name: 'NIN - Neg-Academicos-Mala Experiencia Con Utpl' },\n  { keys: 'no tengo tiempo,ocupado,no puedo estudiar,falta de tiempo', id: '5fadfbe1-909d-44e1-84d7-63a8a184cc7f', name: 'NIN - Neg-Tiempo-No Tiene Tiempo Para Estudiar' },\n  { keys: 'presencial,no en linea,no modalidad en linea,no me gusta en linea,quiero presencial', id: '6ab24c69-4728-48d2-8950-36d6fd47627d', name: 'NIN - No Esta Interesado En Modalidad En Linea' },\n  { keys: 'no desea continuar,no quiere seguir,desiste,abandona,no va a seguir,rechaza', id: 'f6cf9978-e0e0-4cd9-9605-3e4baca78289', name: 'NIN - No Desea Continuar Con Proceso Matricula' },\n  { keys: 'bachiller,colegio,terminando,no se ha graduado,no ha terminado', id: '946823bc-a033-47ab-9461-56bbe36ba649', name: 'NIN - Neg-Pers-Aun No Es Bachiller' },\n  { keys: 'fallecio,fallecido,murio,muerto', id: 'fca8fec9-9636-46e8-b08c-51f95a1861f9', name: 'NIN - Negativa-Pers-Titular Fallecido' },\n  { keys: 'trabaja en utpl,empleado utpl', id: 'ed5610f2-00e8-4284-b62e-0becd4b25e9a', name: 'NIN - Negativa-Pers-Trabaja En La Utpl' },\n  { keys: 'estudiante continuo,ya estudio,ya estudia,segundo ciclo,ya es alumno', id: '7b45b4fe-69f6-4b74-b14a-39b16f7df70f', name: 'NIN - Estudiante Utpl 2Do. En Adelante' }\n];\n\nreturn items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const nom = String(item.json.id_nomenclatura || '').trim().toUpperCase();\n  const motivoSO = String(item.json.motivo || '').trim();\n\n  const defaultMotivo = { id: 'f6cf9978-e0e0-4cd9-9605-3e4baca78289', name: 'NIN - No Desea Continuar Con Proceso Matricula' };\n  let selected = null;\n  const dealstage = cfg.crmUtpl.dealstage[nom] || cfg.crmUtpl.dealstage.NIN;\n\n  // 1. Buscar el motivo del structured output directamente en el catalogo\n  if (motivoSO) {\n    const match = motivosNIN.find(m => m.name === motivoSO);\n    if (match) {\n      selected = match;\n    }\n  }\n\n  // 2. Fallback: keyword matching sobre resumen + transcripcion\n  if (!selected) {\n    const texto = (String(item.json.resumen_llamada || '') + ' ' + String(item.json.transcripcion_llamada || '')).toLowerCase();\n    for (const m of motivosNIN) {\n      const keys = String(m.keys || '').split(',');\n      if (keys.some(k => k.trim() && texto.includes(k.trim()))) {\n        selected = m;\n        break;\n      }\n    }\n  }\n\n  // 3. Default si nada coincide\n  if (!selected) {\n    selected = defaultMotivo;\n  }\n\n  item.json.dealstage = dealstage;\n  item.json.hs_call_disposition = selected.id;\n  item.json.sales_stage_detail = selected.name;\n  return item;\n});\n"
+        "jsCode": "const motivosNIN = [\n  { keys: 'equivocado,wrong,error numero,no es,no lo conozco', id: 'ec04d345-b217-43b8-886c-483caaef1207', name: 'NIN - Equivocado' },\n  { keys: 'fax,empresa,oficina,centralita,ivr', id: 'ff2dbd7a-febb-418e-b5f7-a79b21630d4a', name: 'NIN - IVR De Empresa' },\n  { keys: 'cuenta propia,por su cuenta,solo,centro universitario,yo mismo', id: '6ec7dafd-36c9-4ac7-8fa4-aaf1d5e655ff', name: 'NIN - Continuara por si solo' },\n  { keys: 'fuera del pais,extranjero,viaje,viajara,se va', id: '9bb49857-d693-455f-a719-7da52a3c267f', name: 'NIN - Titular Esta Fuera Del Pais' },\n  { keys: 'no llame,no moleste,no llamar,tercero,familiar pide,no vuelva a llamar', id: 'eb503640-7ac4-4296-be4d-19925e5b5c8f', name: 'NIN - Tercero o Familiar Pide No Llamar' },\n  { keys: 'dinero,costo,caro,pagar,economico,no tiene,no puedo pagar,presupuesto', id: 'db9d6ca8-d46a-429b-a54c-ea911f60dc1d', name: 'NIN - Neg-Costos-No Tiene Dinero' },\n  { keys: 'salud,enfermo,enfermedad,medico,hospital,discapacidad,accidente', id: 'b4bac679-2b71-4b0e-bdc3-5ffaac245d4a', name: 'NIN - Neg-Pers-Problemas De Salud' },\n  { keys: 'para un familiar,para mi hijo,para mi hermano,informacion para,no es para mi', id: '7157a907-42d1-4ba1-a302-bc8c6fe7757d', name: 'NIN - Informacion Para Un Familiar' },\n  { keys: 'bachiller,colegio,terminando,no se ha graduado,no ha terminado', id: '946823bc-a033-47ab-9461-56bbe36ba649', name: 'NIN - Neg-Pers-Aun No Es Bachiller' },\n  { keys: 'fallecio,fallecido,murio,muerto', id: 'fca8fec9-9636-46e8-b08c-51f95a1861f9', name: 'NIN - Negativa-Pers-Titular Fallecido' },\n  { keys: 'estudiante continuo,ya estudio,ya estudia,segundo ciclo,ya es alumno', id: '7b45b4fe-69f6-4b74-b14a-39b16f7df70f', name: 'NIN - Estudiante Utpl 2Do. En Adelante' },\n  { keys: 'trabaja en utpl,empleado utpl', id: 'ed5610f2-00e8-4284-b62e-0becd4b25e9a', name: 'NIN - Negativa-Pers-Trabaja En La Utpl' },\n  { keys: 'maestria,posgrado,postgrado', id: '2efa7cc1-9785-401b-b13e-b133c42ae62e', name: 'NIN - Neg-Academicos-Interesado En Maestria' },\n  { keys: 'no solicite,no pedi informacion,no he solicitado,nunca pedi', id: '491f0fd2-b01e-43fa-b0e7-8e4a59e1abb9', name: 'NIN - Indica Que No Ha Solicitado Informacion' },\n  { keys: 'mala experiencia,mal servicio,queja,mal trato,no me ayudaron,mala atencion', id: '2ba903ac-d1f4-43f3-89c9-1adc67b373c0', name: 'NIN - Neg-Academicos-Mala Experiencia Con Utpl' },\n  { keys: 'no tengo tiempo,ocupado,no puedo estudiar,falta de tiempo', id: '5fadfbe1-909d-44e1-84d7-63a8a184cc7f', name: 'NIN - Neg-Tiempo-No Tiene Tiempo Para Estudiar' },\n  { keys: 'presencial,no en linea,no modalidad en linea,no me gusta en linea,quiero presencial', id: '6ab24c69-4728-48d2-8950-36d6fd47627d', name: 'NIN - No Esta Interesado En Modalidad En Linea' },\n  { keys: 'otra universidad,ya estudio en,estoy en otra,me matricule en otra', id: '7b7283a7-dd21-4601-962d-7f867f0dcb3a', name: 'NIN - Neg-Academicos-Estudia Ahora En Otra Univ' },\n  { keys: 'no ofertan,no tiene la carrera,carrera que quiero,no esta la carrera', id: 'f6828cdb-b9c4-4e4b-a3f0-cc8e372c232f', name: 'NIN - Neg-Academicos-Carreras Ofertads No Desea' },\n  { keys: 'cursos,taller,formacion permanente,seminario', id: 'ee5da155-3a0f-41fd-82e5-72a99d3f19d9', name: 'NIN - Neg-Academicos-Interesado Cursos Form. Perm' },\n  { keys: 'proximo periodo,siguiente ciclo,despues,mas adelante,otro periodo,en otro momento', id: 'c941a32d-0909-46f4-a72b-ca94adbde489', name: 'NIN - Interesado Proximo periodo' },\n  { keys: 'no localizable,no contesta,no se pudo contactar,no responde', id: 'fa9b4696-95d1-4b4a-906f-4b0b7b7f155b', name: 'NIN - No Localizable' }\n];\n\nreturn items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const nom = String(item.json.id_nomenclatura || '').trim().toUpperCase();\n  const texto = (String(item.json.resumen_llamada || '') + ' ' + String(item.json.transcripcion_llamada || '')).toLowerCase();\n\n  const defaultMotivo = { id: 'f6cf9978-e0e0-4cd9-9605-3e4baca78289', name: 'NIN - No Desea Continuar Con Proceso Matricula' };\n  let selected = defaultMotivo;\n  const dealstage = cfg.crmUtpl.dealstage[nom] || cfg.crmUtpl.dealstage.NIN;\n\n  if (nom === 'NIN') {\n    for (const m of motivosNIN) {\n      if (m.keys.split(',').some(k => texto.includes(k.trim()))) {\n        selected = { id: m.id, name: m.name };\n        break;\n      }\n    }\n  } else if (nom === 'NC') {\n    selected = { id: '569d4307-4da7-45e0-9c5a-7530a99aca5d', name: 'NC - No Contacto' };\n  }\n\n  item.json.dealstage = dealstage;\n  item.json.hs_call_disposition = selected.id;\n  item.json.sales_stage_detail = selected.name;\n  return item;\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -44320,
-        9260
+        -7060,
+        3660
       ],
-      "id": "582cfe2c-13e9-417f-ae89-4c212f5e502f",
+      "id": "2da02bff-2c2a-43c7-abba-1e34f0d3212b",
       "name": "MAPEA MOTIVO CRM UTPL"
     },
     {
@@ -684,10 +668,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -44080,
-        9260
+        -6820,
+        3660
       ],
-      "id": "35316817-41d2-466e-b5ee-e6f20d6680b6",
+      "id": "8c25fce5-9dc1-48cc-9a94-acd1c4529f42",
       "name": "PREPARA SOAP XML UTPL"
     },
     {
@@ -708,8 +692,7 @@
           ]
         },
         "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "text/xml; charset=utf-8",
+        "specifyBody": "string",
         "body": "={{ $json.soapXml }}",
         "options": {
           "timeout": 30000
@@ -718,10 +701,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -43840,
-        9260
+        -6580,
+        3660
       ],
-      "id": "adf83bbb-e3e3-4ab7-ab48-dcce82ea9c2c",
+      "id": "e754ffa5-1f82-4670-903e-a832adf75709",
       "name": "ENVIA A CRM UTPL",
       "onError": "continueRegularOutput"
     },
@@ -732,10 +715,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -43600,
-        9260
+        -6340,
+        3660
       ],
-      "id": "d6fe5d2e-d210-4a41-b0c4-66d46eef45f9",
+      "id": "0b1ea2d7-e628-4e6b-92db-a5e21111f856",
       "name": "PROCESA RESPUESTA CRM UTPL"
     },
     {
@@ -747,10 +730,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -43360,
-        9260
+        -6100,
+        3660
       ],
-      "id": "73a0afd6-7f4f-4938-a5bc-987e5600e2a5",
+      "id": "a95a5d7f-704d-4669-bd66-e2f9458bcf77",
       "name": "INSERTA EN CRM UTPL",
       "credentials": {
         "postgres": {
@@ -788,10 +771,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -44040,
-        9620
+        -6780,
+        4020
       ],
-      "id": "7ff94ebb-68bb-45d1-bb74-4edd95ea147e",
+      "id": "09610c5a-9764-4159-8780-39fb12d19870",
       "name": "CONDICION AUDIO"
     },
     {
@@ -804,10 +787,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -43800,
-        9620
+        -6540,
+        4020
       ],
-      "id": "26fcfbd7-4913-4b05-86e0-a11e1637fbab",
+      "id": "ead91b1a-90fd-456d-aa35-b022303e1ba2",
       "name": "DESCARGAR AUDIO",
       "onError": "continueRegularOutput"
     },
@@ -818,10 +801,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -43560,
-        9620
+        -6300,
+        4020
       ],
-      "id": "406caa0a-d125-4169-9e71-94cc00ae5eb1",
+      "id": "0802061e-11ed-4975-9fd2-b6eca5483adf",
       "name": "PROCESAR AUDIO"
     },
     {
@@ -833,10 +816,10 @@
       "type": "n8n-nodes-base.ftp",
       "typeVersion": 1,
       "position": [
-        -43320,
-        9620
+        -6060,
+        4020
       ],
-      "id": "479317bb-e1ae-4d94-9755-1a2bfc6731a8",
+      "id": "094e294b-8e87-4ab7-832a-e251e3d51223",
       "name": "SUBIR AUDIO SFTP",
       "credentials": {
         "sftp": {
@@ -873,25 +856,25 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -44900,
-        8620
+        -7640,
+        3020
       ],
-      "id": "66743eec-9f83-4eaa-a1f5-5a340e45d3b7",
+      "id": "d3bc66ee-4b14-47d9-90a6-a73f9a7bb019",
       "name": "CONDICION ENVIO ALTIVA"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT value, expires_at FROM public.utpl_config WHERE key = 'altiva_token'\nUNION ALL\nSELECT NULL::text, NULL::timestamptz\nWHERE NOT EXISTS (SELECT 1 FROM public.utpl_config WHERE key = 'altiva_token');",
+        "query": "SELECT value, expires_at FROM public.utpl_config WHERE key = 'altiva_token'",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -44680,
-        8500
+        -7420,
+        2900
       ],
-      "id": "d93f1975-8118-4716-ac2a-64ba39ac8039",
+      "id": "f00738e1-6b14-4c88-bf16-ba90f0b163ea",
       "name": "LEE TOKEN ALTIVA",
       "credentials": {
         "postgres": {
@@ -908,10 +891,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -44440,
-        8500
+        -7180,
+        2900
       ],
-      "id": "b1b2e948-861d-4da3-97eb-caa20a241b0d",
+      "id": "c9dbc2ec-b739-4345-8c54-0e1af474971e",
       "name": "DECIDE FLUJO TOKEN"
     },
     {
@@ -942,16 +925,16 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -44200,
-        8500
+        -6940,
+        2900
       ],
-      "id": "02ebea38-755f-4aa8-8ef9-2b613cca22b3",
+      "id": "ae1822b4-b71b-4e7c-afb5-9c794c25251a",
       "name": "NECESITA REFRESH TOKEN"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.altiva.urlBase + '/api/v1/auth/token' }}",
+        "url": "={{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.altiva.urlBase + '/api/auth/token' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -971,26 +954,26 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -43880,
-        8400
+        -6620,
+        2800
       ],
-      "id": "f5b7884c-a8a3-4d25-bc65-bca6707234c6",
+      "id": "7e91a943-d7bf-4779-8514-6cf3a9f5f7b4",
       "name": "SOLICITA TOKEN ALTIVA",
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "={{ (() => { const t = String($json.data?.access_token || '').replace(/'/g, \"''\"); const ex = Number($json.data?.expires_in || 86400); const exp = new Date(Date.now() + ex * 1000).toISOString(); return `INSERT INTO public.utpl_config (key, value, expires_at, updated_at) VALUES ('altiva_token', '${t}', '${exp}', now()) ON CONFLICT (key) DO UPDATE SET value = '${t}', expires_at = '${exp}', updated_at = now() RETURNING *;`; })() }}",
+        "query": "={{ (() => { const t = String($json.data?.access_token || '').replace(/'/g, \"''\"); const ex = Number($json.data?.expires_in || 86400); const exp = new Date(Date.now() + ex * 1000).toISOString(); return `INSERT INTO public.utpl_config (key, value, expires_at, updated_at) VALUES ('altiva_token', '${t}', '${exp}', now()) ON CONFLICT (key) DO UPDATE SET value = '${t}', expires_at = '${exp}', updated_at = now()`; })() }}",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -43640,
-        8400
+        -6380,
+        2800
       ],
-      "id": "3bb1a566-2d36-44d5-9d63-0c84eea20316",
+      "id": "1366e494-2eae-48db-bf05-2d3689ba1db2",
       "name": "GUARDA TOKEN ALTIVA",
       "credentials": {
         "postgres": {
@@ -1002,26 +985,26 @@
     },
     {
       "parameters": {},
-      "id": "658e79cc-2518-42c2-88ad-fb1c6cf053c5",
+      "id": "fce45547-f66e-4af5-9fa2-5d90488a50ff",
       "name": "JOIN ALTIVA TOKEN",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -43780,
-        8740
+        -6520,
+        3140
       ]
     },
     {
       "parameters": {
-        "jsCode": "return items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const mapeoItem = $items('MAPEA CAMPOS CIERRE UTPL', 0, 0)[0].json;\n  const nom = String(mapeoItem.id_nomenclatura || '').trim().toUpperCase();\n  const interes = String(mapeoItem.interes_llamada_ejecutivo || '').toLowerCase().trim();\n\n  let nodo;\n  if (interes === 'sÃ­' || interes === 'si' || interes === 'yes') {\n    nodo = '2';\n  } else if (interes === 'no') {\n    nodo = '1';\n  } else {\n    nodo = cfg.altiva.nodoMapping[nom] || '1';\n  }\n\n  item.json.altivaBody = {\n    nuic: String(mapeoItem.id_interno_negocio || ''),\n    nombre_corto_campania: String(mapeoItem.nombre_corto_campania || cfg.altiva.nombreCampania || ''),\n    nodo: nodo\n  };\n\n  const token = item.json.altivaToken || (item.json.data && item.json.data.access_token) || item.json.value || '';\n  if (!item.json.altivaToken && item.json.data && item.json.data.access_token) {\n    item.json.altivaToken = String(item.json.data.access_token);\n  } else if (!item.json.altivaToken && item.json.value) {\n    item.json.altivaToken = String(item.json.value);\n  }\n\n  return item;\n});"
+        "jsCode": "return items.map(item => {\n  const cfg = $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg;\n  const nom = String(item.json.id_nomenclatura || '').trim().toUpperCase();\n  const nodo = cfg.altiva.nodoMapping[nom] || '1';\n\n  item.json.altivaBody = {\n    nuic: String(item.json.cedula || ''),\n    nombre_corto_campania: String(item.json.nombre_corto_campania || cfg.altiva.nombreCampania || ''),\n    nodo: nodo\n  };\n\n  const token = item.json.altivaToken || (item.json.data && item.json.data.access_token) || '';\n  if (!item.json.altivaToken && item.json.data && item.json.data.access_token) {\n    item.json.altivaToken = String(item.json.data.access_token);\n  }\n\n  return item;\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -43540,
-        8740
+        -6280,
+        3140
       ],
-      "id": "331c14aa-6508-4d5c-9e57-742b56d6fb01",
+      "id": "cdc6e543-3bfb-4762-96ac-50957ade1703",
       "name": "PREPARA CARGA ALTIVA"
     },
     {
@@ -1051,10 +1034,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -43300,
-        8740
+        -6040,
+        3140
       ],
-      "id": "99b007fd-d682-4183-bcf9-ce9f94257057",
+      "id": "ee60022e-2f93-4e0d-b1a6-bab6bca29524",
       "name": "ACTUALIZA NODO ALTIVA",
       "onError": "continueRegularOutput"
     },
@@ -1065,10 +1048,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -43060,
-        8740
+        -5800,
+        3140
       ],
-      "id": "3fc7f7ad-ceff-4cd7-b97a-8af04ab7ead0",
+      "id": "21d8ae33-87ed-4148-a9c2-660f200fe820",
       "name": "PROCESA RESPUESTA ALTIVA"
     },
     {
@@ -1078,10 +1061,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -42640,
-        8280
+        -5380,
+        2680
       ],
-      "id": "14087388-cc22-4d22-9912-691c8ebe7ac9",
+      "id": "511e8df6-1cb2-4f45-9ece-7b1124895a1a",
       "name": "PREPARA CARGA ALTIVA1"
     },
     {
@@ -1111,10 +1094,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -42400,
-        8280
+        -5140,
+        2680
       ],
-      "id": "928b0230-c657-4d8d-9af2-714256931e06",
+      "id": "4eee5aaf-c34d-49b8-92e8-78ec2787a7d7",
       "name": "ACTUALIZA NODO ALTIVA1",
       "onError": "continueRegularOutput"
     },
@@ -1125,10 +1108,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -42520,
-        8540
+        -5260,
+        2940
       ],
-      "id": "777d54f9-3975-4924-a06a-f0e78bf2bd14",
+      "id": "e1b28af9-8791-400d-baf8-dc1d3af6dcc4",
       "name": "PREPARA SOAP XML UTPL1"
     },
     {
@@ -1159,10 +1142,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -42280,
-        8540
+        -5020,
+        2940
       ],
-      "id": "65fec920-164a-4ef9-b60c-ef9ef3971466",
+      "id": "92a7f91f-0448-4bc9-8cb4-4d37a54d0824",
       "name": "ENVIA A CRM UTPL1",
       "onError": "continueRegularOutput"
     },
@@ -1189,10 +1172,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -42880,
-        8280
+        -5620,
+        2680
       ],
-      "id": "2c615dad-f33c-4a70-9c4c-050ef04b6428",
+      "id": "362b3deb-4ad2-404a-bd6c-1d59fd0c6b01",
       "name": "PRUEBA - SOLICITA TOKEN ALTIVA1",
       "onError": "continueRegularOutput"
     },
@@ -1203,313 +1186,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -42760,
-        8540
+        -5500,
+        2940
       ],
-      "id": "5dccd7fc-310b-4b3c-8405-e611a9cd406d",
+      "id": "9ea86008-5d26-4f8f-9ee8-eac262f9a876",
       "name": "PRUEBA - MAPEA MOTIVO CRM UTPL1"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "bb686ee3-7490-4257-b5a4-3b9f220a280b",
-              "leftValue": "={{ $json.body.message.type }}",
-              "rightValue": "transfer-destination-request",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -46640,
-        9080
-      ],
-      "id": "13514a05-65e4-40b0-9dd7-1c748b26e7d8",
-      "name": "SI SE HIZO LA TRANSFERENCIA"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "e0ab6d9a-367e-459c-b752-9eafad340ab2",
-              "name": "cedula",
-              "value": "={{ $json.body.message.assistant.variableValues.cedula }}",
-              "type": "string"
-            },
-            {
-              "id": "296b9900-a30e-48c9-9d4c-93966344c9a6",
-              "name": "telefono",
-              "value": "={{ $json.body.message.assistant.variableValues.telefono }}",
-              "type": "string"
-            },
-            {
-              "id": "1f60b670-b3fb-423f-8a21-40f5d30d2457",
-              "name": "sip",
-              "value": "={{ $json.body.message.assistant.variableValues.sip }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -46380,
-        8900
-      ],
-      "id": "9318390f-0d79-4ef4-b8d1-81abf1eb617e",
-      "name": "MAPEA EL CONTACTO A TRANSFERIR"
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        -45860,
-        8780
-      ],
-      "id": "d30bd558-4b97-45d0-9065-0ab005a33b47",
-      "name": "Respond to Webhook"
-    },
-    {
-      "parameters": {
-        "jsCode": "/*\n * CONSTRUYE SIP URI PARA TRANSFERENCIA CIEGA (blind transfer)\n * -----------------------------------------------------------\n * PROPOSITO: Cuando VAPI solicita un destino de transferencia\n * (transfer-destination-request), este nodo construye un SIP URI\n * con los datos del cliente para enrutar la llamada al operador.\n *\n * FORMULA: sip:{sip}_{nuic}_{id_registro}_{id_campania}@trunk\n * con headers X-Id-* para trazabilidad en el PBX.\n *\n * MODO: blind-transfer (transfiere sin consultar disponibilidad)\n * HABILITADO: sipHeadersInReferToEnabled para pasar metadata\n */\n// n8n recibe un array, extraer primer elemento\nconst data = Array.isArray($input.item.json) ? $input.item.json[0] : $input.item.json;\n\n// Extraer valores directamente\nconst cedula = encodeURIComponent(data.cedula || \"0\");\nconst telefono = encodeURIComponent(data.telefono || \"0\");\nconst sip = encodeURIComponent(data.sip || \"0\");\n// Construir sipUri con query params\nconst sipUri = `sip:${sip}_${cedula}_${telefono}@vapisiptrunk.plusservices.ec?&X-cedula=${cedula}&X-telefono=${telefono}`;\n\n//const sipUri = `sip:80091-${nuic}-${id_registro}-${id_campania}@vapisiptrunk.plusservices.ec?X-Id-Registro=${id_registro}&X-Id-Campania=${id_campania}`;\n\n\n//console.log(\"📊 ID Registro:\", id_registro, \"| ID Campaña:\", id_campania);\n//console.log(\"📞 SIP URI:\", sipUri);\n\n// Devolver array con un solo elemento (n8n lo enviará como el primer item)\nreturn [{\n  json: {\n    destination: {\n      type: \"sip\",\n      sipUri: sipUri,\n      transferPlan: {\n        mode: \"blind-transfer\",\n        sipHeadersInReferToEnabled: true\n      }\n    }\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -46120,
-        8840
-      ],
-      "id": "a0859013-3017-4747-9361-8b220075b87e",
-      "name": "LE DICE A VAPI QUE SIPURI DEBE TRANSFERIR"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT value, expires_at FROM public.utpl_config WHERE key = 'altiva_token'\nUNION ALL\nSELECT NULL::text, NULL::timestamptz\nWHERE NOT EXISTS (SELECT 1 FROM public.utpl_config WHERE key = 'altiva_token');",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [
-        -46020,
-        8200
-      ],
-      "id": "cf68aa2c-4dba-4d3a-8f9c-390e2abb8f04",
-      "name": "LEE TOKEN ALTIVA1",
-      "credentials": {
-        "postgres": {
-          "id": "Iz7EEp0WgJu3LXhn",
-          "name": "Gea_postgress"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => {\n  const tokenRow = item.json;\n  const token = tokenRow.value || null;\n  const expiresAt = tokenRow.expires_at || null;\n\n  let needsRefresh = true;\n  if (token && expiresAt) {\n    if (new Date(expiresAt) > new Date()) {\n      needsRefresh = false;\n      item.json.altivaToken = token;\n    }\n  }\n\n  item.json.tokenNeedsRefresh = needsRefresh;\n  return item;\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -45780,
-        8200
-      ],
-      "id": "9ecf2a88-afc3-4bbd-b103-3f3c64c3f3c0",
-      "name": "DECIDE FLUJO TOKEN1"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "altiva_needs_refresh",
-              "leftValue": "={{ $json.tokenNeedsRefresh }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -45540,
-        8200
-      ],
-      "id": "7f11ffe5-494f-4fba-979a-6b01b31e4c44",
-      "name": "NECESITA REFRESH TOKEN1"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.altiva.urlBase + '/api/v1/auth/token' }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ grant_type: 'client_credentials', client_id: $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.altiva.clientId, client_secret: $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.altiva.clientSecret }) }}",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -45320,
-        7960
-      ],
-      "id": "b5c891f2-ccc2-4ba8-8bfe-981a0dafd85c",
-      "name": "SOLICITA TOKEN ALTIVA1",
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "={{ (() => { const t = String($json.data?.access_token || '').replace(/'/g, \"''\"); const ex = Number($json.data?.expires_in || 86400); const exp = new Date(Date.now() + ex * 1000).toISOString(); return `INSERT INTO public.utpl_config (key, value, expires_at, updated_at) VALUES ('altiva_token', '${t}', '${exp}', now()) ON CONFLICT (key) DO UPDATE SET value = '${t}', expires_at = '${exp}', updated_at = now() RETURNING *;`; })() }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [
-        -45080,
-        7960
-      ],
-      "id": "b577b045-41d0-4513-a9a7-d88250cf42d1",
-      "name": "GUARDA TOKEN ALTIVA1",
-      "credentials": {
-        "postgres": {
-          "id": "Iz7EEp0WgJu3LXhn",
-          "name": "Gea_postgress"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {},
-      "id": "c7b8c99f-54e4-4b59-9850-c2325125275d",
-      "name": "JOIN ALTIVA TOKEN1",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        -45180,
-        8220
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => {\n  const mapeoItem = $items('MAPEA EL CONTACTO A TRANSFERIR', 0, 0)[0].json;\n  const cfg = $items('CONFIG INICIAL UTPL1', 0, 0)[0].json.cfg;\n\n  item.json.altivaBody = {\n    nuic: String(mapeoItem.cedula || ''),\n    nombre_corto_campania: cfg.altiva.nombreCampania || 'utpl_integracion',\n    nodo: '2'\n  };\n\n  return item;\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -44940,
-        8220
-      ],
-      "id": "48b42e37-e4aa-48d2-ad3c-305b6fa61dfd",
-      "name": "PREPARA CARGA ALTIVA2"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $items('CONFIG INICIAL UTPL', 0, 0)[0].json.cfg.altiva.urlBase + '/api/v1/altiva/nodo/actualizar' }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "name": "Authorization",
-              "value": "={{ 'Bearer ' + $json.altivaToken }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.altivaBody) }}",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -44700,
-        8220
-      ],
-      "id": "20e9112b-e5df-417f-8c9e-1143295d327b",
-      "name": "ACTUALIZA NODO ALTIVA2",
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => {\n  const body = item.json.response || item.json;\n  let status = null, message = '';\n  try {\n    const parsed = typeof body === 'string' ? JSON.parse(body) : body;\n    status = parsed.estado || null;\n    message = parsed.mensaje || '';\n  } catch (e) {\n    message = String(body || '').substring(0, 200);\n  }\n\n  item.json.altivaStatus = status;\n  item.json.altivaMessage = message;\n  item.json.altivaSuccess = status === 200;\n\n  return item;\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -44460,
-        8220
-      ],
-      "id": "2db9438b-100f-42f2-805f-fad2b48aba29",
-      "name": "PROCESA RESPUESTA ALTIVA1"
-    },
-    {
-      "parameters": {
-        "jsCode": "return items.map(item => {\n  item.json.cfg = {\n      db: { schema: 'public', table: 'utpl_registros', pk: 'id_negocio' },\n      states: { pending: 'PENDIENTE', inProgress: 'EN_PROCESO', retry: 'REINTENTAR', done: 'FINALIZADO' },\n      retryNomenclaturas: ['NC', 'VLL'],\n      policy: { TZ: 'America/Guayaquil' },\n      phoneFields: ['telefono1', 'telefono2', 'telefono3', 'telefono4', 'telefono5', 'telefono6'],\n      crmUtpl: {\n        triggerNomenclaturas: ['NIN'],\n        wsUrl: 'http://192.168.10.112/WSUtpl/ServiceUtpl.asmx',\n        soapAction: 'http://tempuri.org/RegistrarLLamada',\n        agentName: 'ARIA UTPL',\n        dealstage: { NIN: '1020923926', NC: '1008735099' },\n        defaultDisposition: {\n          agotado: { disposition: 'fa9b4696-95d1-4b4a-906f-4b0b7b7f155b', subEstado: 'NIN - No Localizable' }\n        }\n      },\n      altiva: {\n        urlBase: 'http://192.168.10.238:91',\n        clientId: '7',\n        clientSecret: 'ug7wMESTpOPPmdDC3KoEyYpVXskcOqRWnfHFZm8X',\n        nombreCampania: 'utpl_integracion',\n        nodoMapping: { NIN: '1', ACE: '2', IND: '2', NUE: '2' }\n      }\n    };\n  return item;\n});"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -45580,
-        8460
-      ],
-      "id": "6080f618-3b30-46a0-9375-872634a76c75",
-      "name": "CONFIG INICIAL UTPL1"
     }
   ],
   "pinData": {},
@@ -1518,7 +1199,7 @@
       "main": [
         [
           {
-            "node": "SI SE HIZO LA TRANSFERENCIA",
+            "node": "CONFIG INICIAL UTPL",
             "type": "main",
             "index": 0
           }
@@ -1591,12 +1272,7 @@
       "main": [
         [
           {
-            "node": "ACTUALIZA REGISTRO UTPL",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "INSERTA EN LLAMADAS UTPL",
+            "node": "GENERAR QUERY ACTUALIZA",
             "type": "main",
             "index": 0
           },
@@ -1731,6 +1407,22 @@
         [
           {
             "node": "IGNORAR EVENTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GENERAR QUERY ACTUALIZA": {
+      "main": [
+        [
+          {
+            "node": "ACTUALIZA REGISTRO UTPL",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "INSERTA EN LLAMADAS UTPL",
             "type": "main",
             "index": 0
           }
@@ -1927,170 +1619,13 @@
           }
         ]
       ]
-    },
-    "SI SE HIZO LA TRANSFERENCIA": {
-      "main": [
-        [
-          {
-            "node": "MAPEA EL CONTACTO A TRANSFERIR",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "CONFIG INICIAL UTPL",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "MAPEA EL CONTACTO A TRANSFERIR": {
-      "main": [
-        [
-          {
-            "node": "LE DICE A VAPI QUE SIPURI DEBE TRANSFERIR",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "LE DICE A VAPI QUE SIPURI DEBE TRANSFERIR": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Respond to Webhook": {
-      "main": [
-        [
-          {
-            "node": "CONFIG INICIAL UTPL1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "LEE TOKEN ALTIVA1": {
-      "main": [
-        [
-          {
-            "node": "DECIDE FLUJO TOKEN1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "DECIDE FLUJO TOKEN1": {
-      "main": [
-        [
-          {
-            "node": "NECESITA REFRESH TOKEN1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "NECESITA REFRESH TOKEN1": {
-      "main": [
-        [
-          {
-            "node": "SOLICITA TOKEN ALTIVA1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "JOIN ALTIVA TOKEN1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "SOLICITA TOKEN ALTIVA1": {
-      "main": [
-        [
-          {
-            "node": "GUARDA TOKEN ALTIVA1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GUARDA TOKEN ALTIVA1": {
-      "main": [
-        [
-          {
-            "node": "JOIN ALTIVA TOKEN1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "JOIN ALTIVA TOKEN1": {
-      "main": [
-        [
-          {
-            "node": "PREPARA CARGA ALTIVA2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "PREPARA CARGA ALTIVA2": {
-      "main": [
-        [
-          {
-            "node": "ACTUALIZA NODO ALTIVA2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "ACTUALIZA NODO ALTIVA2": {
-      "main": [
-        [
-          {
-            "node": "PROCESA RESPUESTA ALTIVA1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "CONFIG INICIAL UTPL1": {
-      "main": [
-        [
-          {
-            "node": "LEE TOKEN ALTIVA1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "cfba0670-0643-47f7-ba9c-1ab2737ef1bc",
+  "versionId": "7fcf404e-17a1-44dd-aa8c-9d447fc90a0f",
   "meta": {
     "instanceId": "915a7f7568d882a64f47657d6f3fab09c88f51183cb22a1bfa48ee39cc137bcd"
   },
